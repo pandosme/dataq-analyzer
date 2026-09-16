@@ -1,0 +1,23 @@
+services:
+  app:
+    image: pandosme/dataq-analyzer:${DATAQ_VERSION:-latest}
+    ports:
+      - "${DATAQ_PORT:-3303}:80"
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 80
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongodb:27017/dataq-analyzer}
+      MQTT_BROKER_URL: ${MQTT_BROKER_URL:-}
+      MQTT_USERNAME: ${MQTT_USERNAME:-}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:-}
+      VIDEOX_API_KEY: ${VIDEOX_API_KEY:-}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      CREDENTIAL_ENCRYPTION_KEY: ${CREDENTIAL_ENCRYPTION_KEY:?Set CREDENTIAL_ENCRYPTION_KEY in .env}
+      BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME:-}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
+      CONFIG_PATH: /app/config.yaml
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+    restart: unless-stopped

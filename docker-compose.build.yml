@@ -1,0 +1,13 @@
+# Developer build file — used to build and push the image to Docker Hub.
+# End-users should use docker-compose.yml (no build required).
+#
+# Usage:
+#   docker compose -f docker-compose.build.yml build
+#   docker compose -f docker-compose.build.yml push
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: pandosme/dataq-analyzer:${DATAQ_VERSION:-latest}

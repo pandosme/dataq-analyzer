@@ -1,0 +1,189 @@
+.filter-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filter-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+}
+
+.filter-group input,
+.filter-group select {
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 12px;
+  background: white;
+}
+
+.filter-group input:focus,
+.filter-group select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+/* Fixed time-range note (Dwell Heatmap) */
+.fixed-range-note {
+  font-size: 11px;
+  line-height: 1.4;
+  color: #666;
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 6px 8px;
+}
+
+.dark-theme .fixed-range-note {
+  color: #b0b0b0;
+  background: #242424;
+  border-color: #3a3a3a;
+}
+
+/* Time Mode Selector */
+.time-mode-selector {
+  display: flex;
+  gap: 8px;
+}
+
+.time-mode-selector button {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.time-mode-selector button:hover {
+  background: #f5f5f5;
+}
+
+.time-mode-selector button.active {
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+}
+
+/* Action Buttons */
+.filter-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.btn-primary,
+.btn-secondary {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: #667eea;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #5568d3;
+}
+
+.btn-secondary {
+  background: #e0e0e0;
+  color: #333;
+}
+
+.btn-secondary:hover {
+  background: #d0d0d0;
+}
+
+/* Dark Theme */
+.dark-theme .filter-panel {
+  background: #1a1a1a;
+  border-color: #3a3a3a;
+}
+
+.dark-theme .filter-panel h3 {
+  color: #e0e0e0;
+  border-bottom-color: #3a3a3a;
+}
+
+.dark-theme .filter-group label {
+  color: #b0b0b0;
+}
+
+.dark-theme .filter-group select,
+.dark-theme .filter-group input {
+  background: #242424;
+  border-color: #3a3a3a;
+  color: #e0e0e0;
+}
+
+.dark-theme .filter-group select:focus,
+.dark-theme .filter-group input:focus {
+  border-color: #64b5f6;
+  background: #2a2a2a;
+}
+
+.dark-theme .time-mode-selector button {
+  background: #242424;
+  border-color: #3a3a3a;
+  color: #e0e0e0;
+}
+
+.dark-theme .time-mode-selector button:hover {
+  background: #2a2a2a;
+}
+
+.dark-theme .time-mode-selector button.active {
+  background: #64b5f6;
+  color: #0f0f0f;
+  border-color: #64b5f6;
+}
+
+.dark-theme .checkbox-group {
+  background: #242424;
+  border-color: #3a3a3a;
+}
+
+.dark-theme .checkbox-label {
+  color: #e0e0e0;
+}
+
+.dark-theme .checkbox-label input:checked + span {
+  color: #e0e0e0;
+}
+
+.dark-theme .btn-primary {
+  background: #64b5f6;
+  color: #0f0f0f;
+}
+
+.dark-theme .btn-primary:hover {
+  background: #90caf9;
+}
+
+.dark-theme .btn-secondary {
+  background: #3a3a3a;
+  color: #e0e0e0;
+}
+
+.dark-theme .btn-secondary:hover {
+  background: #4a4a4a;
+}

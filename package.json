@@ -1,0 +1,63 @@
+{
+  "name": "dataq-analyzer",
+  "version": "1.0.0",
+  "description": "DataQ Analyzer - MQTT-based path, flow, and video analytics",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently --kill-others --names server,web --prefix-colors cyan,magenta \"npm run dev:server\" \"npm run dev:web\"",
+    "dev:server": "NODE_ENV=development PORT=3303 CORS_ORIGIN=http://localhost:3403 MONGODB_URI=mongodb://localhost:${MONGODB_DEV_PORT:-27017}/dataq-analyzer nodemon src/server.js",
+    "dev:web": "npm --prefix web run dev",
+    "dev:db": "docker compose -f docker-compose.yml -f docker-compose.mongodb.yml -f docker-compose.dev.yml up -d mongodb",
+    "start": "node src/server.js",
+    "configure": "./setup.sh",
+    "setup": "npm ci && npm --prefix web ci",
+    "build": "npm --prefix web run build",
+    "config:check": "node -e \"import('./src/config/index.js').then(() => console.log('Configuration is valid'))\"",
+    "docker:build": "docker compose -f docker-compose.build.yml build",
+    "docker:up": "docker compose up -d",
+    "docker:up:build": "npm run docker:build && docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "lint": "npm run lint:server && npm run lint:web",
+    "lint:server": "eslint src",
+    "lint:web": "npm --prefix web run lint",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write \"**/*.{js,json,md}\"",
+    "test": "node --test test/*.test.js"
+  },
+  "keywords": [
+    "mqtt",
+    "axis",
+    "dataq",
+    "camera",
+    "analytics",
+    "heatmap"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.13.2",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "digest-fetch": "^3.1.1",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.0.3",
+    "morgan": "^1.10.0",
+    "mqtt": "^5.3.4",
+    "ws": "^8.18.0",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "eslint": "^8.56.0",
+    "nodemon": "^3.1.14",
+    "prettier": "^3.1.1"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

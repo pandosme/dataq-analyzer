@@ -1,0 +1,279 @@
+.counter-flow-view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+}
+
+/* ─── Controls Bar ─────────────────────────────────────────────────────────── */
+.flow-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  padding: 10px 12px;
+  background: #2a2a2a;
+  border-radius: 6px;
+  border: 1px solid #3a3a3a;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.control-group label {
+  font-size: 13px;
+  color: #aaa;
+  white-space: nowrap;
+}
+
+.control-group select {
+  background: #1e1e1e;
+  border: 1px solid #444;
+  color: #e0e0e0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  min-width: 120px;
+}
+
+.control-group select:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+.control-group input[type="color"] {
+  width: 32px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid #444;
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.control-group input[type="range"] {
+  width: 80px;
+  accent-color: #3498db;
+}
+
+.control-group span {
+  font-size: 12px;
+  color: #888;
+  min-width: 36px;
+}
+
+.days-info {
+  font-size: 11px;
+  color: #888;
+  margin-left: 4px;
+}
+
+.btn-edit-arrows {
+  background: #444;
+  border: 1px solid #555;
+  color: #e0e0e0;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.15s, border-color 0.15s;
+  margin-left: auto;
+}
+
+.btn-edit-arrows:hover {
+  background: #555;
+  border-color: #666;
+}
+
+.btn-edit-arrows.active {
+  background: #2ecc71;
+  border-color: #27ae60;
+  color: #fff;
+}
+
+/* Arrow selector in edit mode */
+.arrow-selector {
+  background: rgba(46, 204, 113, 0.15);
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+.arrow-selector select {
+  min-width: 100px;
+  font-weight: 500;
+}
+
+/* ─── Canvas Container ─────────────────────────────────────────────────────── */
+.flow-canvas-container {
+  position: relative;
+  flex: 1;
+  min-height: 300px;
+  background: #1a1a1a;
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flow-backdrop {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+}
+
+.flow-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Enable pointer events on interactive elements */
+.flow-svg .drag-handle {
+  pointer-events: auto;
+}
+
+.flow-svg .drag-handle:hover {
+  filter: brightness(1.2);
+}
+
+/* Arrow styling */
+.arrow-path {
+  transition: stroke-width 0.15s ease;
+}
+
+.arrow-label text {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  pointer-events: none;
+}
+
+.arrow-label rect {
+  pointer-events: none;
+}
+
+/* ─── Arrow Width Controls ─────────────────────────────────────────────────── */
+.arrow-width-controls {
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  padding: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.arrow-width-controls h4 {
+  margin: 0 0 10px 0;
+  font-size: 13px;
+  color: #aaa;
+  font-weight: 500;
+}
+
+.width-settings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.width-settings-table th {
+  text-align: left;
+  padding: 6px 8px;
+  color: #888;
+  font-weight: 500;
+  border-bottom: 1px solid #3a3a3a;
+}
+
+.width-settings-table td {
+  padding: 6px 8px;
+  color: #e0e0e0;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.width-settings-table td:first-child {
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.width-settings-table input[type="range"] {
+  width: 80px;
+  vertical-align: middle;
+  accent-color: #3498db;
+}
+
+.width-settings-table input[type="checkbox"] {
+  margin-right: 6px;
+  accent-color: #3498db;
+}
+
+.width-settings-table span {
+  font-size: 11px;
+  color: #888;
+  margin-left: 6px;
+}
+
+.width-settings-table label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: #aaa;
+}
+
+/* ─── Dark Theme Adjustments ───────────────────────────────────────────────── */
+.dark-theme .counter-flow-view {
+  /* Already dark by default */
+}
+
+/* Light theme overrides (if needed) */
+body:not(.dark-theme) .flow-controls {
+  background: #f5f5f5;
+  border-color: #ddd;
+}
+
+body:not(.dark-theme) .control-group label {
+  color: #666;
+}
+
+body:not(.dark-theme) .control-group select {
+  background: #fff;
+  border-color: #ccc;
+  color: #333;
+}
+
+body:not(.dark-theme) .flow-canvas-container {
+  background: #eee;
+}
+
+body:not(.dark-theme) .arrow-width-controls {
+  background: #f5f5f5;
+  border-color: #ddd;
+}
+
+body:not(.dark-theme) .arrow-width-controls h4 {
+  color: #666;
+}
+
+body:not(.dark-theme) .width-settings-table th {
+  color: #666;
+}
+
+body:not(.dark-theme) .width-settings-table td {
+  color: #333;
+}
+
+body:not(.dark-theme) .btn-edit-arrows {
+  background: #e0e0e0;
+  border-color: #ccc;
+  color: #333;
+}
+
+body:not(.dark-theme) .btn-edit-arrows:hover {
+  background: #d0d0d0;
+}

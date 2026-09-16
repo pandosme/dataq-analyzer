@@ -1,0 +1,50 @@
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+node_modules
+**/node_modules
+dist
+**/dist
+logs
+coverage
+secrets
+*.log# Dependencies
+node_modules
+admin-ui/node_modules
+
+# Build output (will be built in container)
+dist
+admin-ui/dist
+
+# Development files
+.git
+.gitignore
+.env
+.env.*
+*.md
+!README.md
+
+# Logs
+logs
+*.log
+
+# IDE
+.vscode
+.idea
+
+# Docker
+docker/
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Scripts
+scripts/
+setup.sh
+start.sh
+
+# Tests
+coverage
+.nyc_output

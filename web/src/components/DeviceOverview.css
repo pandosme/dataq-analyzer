@@ -1,0 +1,146 @@
+.device-overview {
+  width: min(1180px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 38px 0 56px;
+  overflow-y: auto;
+}
+
+.page-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.page-heading h2 {
+  margin: 2px 0 4px;
+  color: var(--ink-strong);
+  font-size: 28px;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+.page-kicker {
+  margin: 0;
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.page-description {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 14px;
+}
+
+.overview-summary {
+  display: flex;
+  gap: 28px;
+  margin-bottom: 16px;
+  color: var(--ink-muted);
+  font-size: 13px;
+}
+
+.overview-summary > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.overview-summary strong {
+  color: var(--ink-strong);
+}
+
+.device-table-shell {
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+.device-table-shell th {
+  color: var(--ink-muted);
+  background: var(--surface-subtle);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.device-row {
+  cursor: pointer;
+}
+
+.device-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.device-identity,
+.device-table-shell td:nth-child(5) {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.device-identity strong {
+  color: var(--ink-strong);
+  font-size: 14px;
+}
+
+.device-identity span,
+.path-count {
+  color: var(--ink-muted);
+  font-size: 12px;
+}
+
+.status-dot {
+  display: block;
+  width: 7px;
+  height: 7px;
+  background: #8b949e;
+  border-radius: 50%;
+}
+
+.status-dot.online {
+  background: #168a68;
+}
+
+.row-arrow {
+  color: var(--ink-faint);
+  transition: color 120ms ease, transform 120ms ease;
+}
+
+.device-row:hover .row-arrow {
+  color: var(--accent);
+  transform: translateX(2px);
+}
+
+.overview-state {
+  display: flex;
+  min-height: 240px;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--ink-muted);
+}
+
+.overview-error {
+  color: var(--danger);
+}
+
+@media (max-width: 700px) {
+  .device-overview {
+    width: calc(100% - 28px);
+    padding-top: 24px;
+  }
+
+  .overview-summary {
+    flex-direction: column;
+    gap: 8px;
+  }
+}

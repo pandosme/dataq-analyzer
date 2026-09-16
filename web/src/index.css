@@ -1,0 +1,67 @@
+:root {
+  font-family: "Source Sans 3", "Segoe UI", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #27313a;
+  background-color: #f4f6f5;
+  --surface: #ffffff;
+  --surface-subtle: #f7f9f8;
+  --surface-raised: #eef2f0;
+  --border: #dbe2df;
+  --border-strong: #c7d1cd;
+  --ink-strong: #19231f;
+  --ink: #34413c;
+  --ink-muted: #68756f;
+  --ink-faint: #9aa6a1;
+  --accent: #147d6c;
+  --accent-strong: #0d6557;
+  --accent-soft: #e6f3f0;
+  --danger: #b84242;
+  --shadow-sm: 0 1px 2px rgba(22, 35, 30, 0.05), 0 5px 16px rgba(22, 35, 30, 0.04);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: inherit;
+}
+a:hover {
+  color: var(--accent-strong);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+h1, h2, h3 { letter-spacing: 0; }
+
+/* Dark Theme */
+.dark-theme {
+  color-scheme: dark;
+  color: #e0e0e0;
+  background-color: #0f0f0f;
+}
+
+.dark-theme a {
+  color: #64b5f6;
+}
+
+.dark-theme a:hover {
+  color: #90caf9;
+}

@@ -1,0 +1,243 @@
+.login-container-videox {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #13251f;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 32px 32px;
+  padding: 20px;
+}
+
+.login-card-videox {
+  background: #1d3029;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 18px 48px rgba(3, 16, 11, 0.3);
+  padding: 40px;
+  max-width: 480px;
+  width: 100%;
+}
+
+.login-header-videox {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.login-header-videox h1 {
+  color: #fff;
+  margin: 0 0 8px 0;
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+
+.login-header-videox p {
+  color: #999;
+  margin: 0;
+  font-size: 14px;
+  letter-spacing: 0.3px;
+}
+
+.login-section-label {
+  color: #ccc;
+  font-size: 0.9em;
+  font-weight: 500;
+  margin-bottom: 16px;
+  letter-spacing: 0.3px;
+}
+
+.error-message-videox {
+  background: rgba(244, 67, 54, 0.1);
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  color: #f44336;
+  padding: 14px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 0.9em;
+}
+
+.btn-continue {
+  width: 100%;
+  padding: 14px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95em;
+  letter-spacing: 0;
+  transition: all 0.2s;
+  margin-top: 16px;
+}
+
+.btn-continue:hover:not(:disabled) {
+  background: var(--accent-strong);
+}
+
+.btn-continue:disabled {
+  background: #3a3a3a;
+  color: #666;
+  cursor: not-allowed;
+}
+
+/* Credentials Step */
+.selected-server-display {
+  background: #2a2a2a;
+  border: 2px solid #3a3a3a;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.server-display-label {
+  font-size: 0.75em;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.server-display-name {
+  font-size: 1.1em;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.server-display-url {
+  font-size: 0.85em;
+  color: #999;
+  font-family: monospace;
+  margin-bottom: 12px;
+}
+
+.btn-change-server {
+  background: transparent;
+  border: 1px solid #3a3a3a;
+  color: #999;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85em;
+  transition: all 0.2s;
+}
+
+.btn-change-server:hover {
+  border-color: #1976d2;
+  color: #1976d2;
+}
+
+.credentials-section {
+  margin-top: 16px;
+}
+
+.form-group-login {
+  margin-bottom: 20px;
+}
+
+.form-group-login label {
+  display: block;
+  margin-bottom: 8px;
+  color: #ccc;
+  font-size: 0.9em;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.form-group-login input {
+  width: 100%;
+  padding: 12px;
+  background: #1a1a1a;
+  border: 1px solid #3a3a3a;
+  border-radius: 5px;
+  color: #fff;
+  font-size: 0.95em;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.form-group-login input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(20, 125, 108, 0.14);
+}
+
+.form-group-login input::placeholder {
+  color: #666;
+}
+
+/* Light Theme Override for Login (when not in dark mode) */
+:root:not(.dark-theme) .login-container-videox {
+  background-color: #eef3f1;
+  background-image:
+    linear-gradient(rgba(20, 125, 108, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 125, 108, 0.045) 1px, transparent 1px);
+}
+
+:root:not(.dark-theme) .login-card-videox {
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow: 0 18px 48px rgba(22, 35, 30, 0.12);
+}
+
+:root:not(.dark-theme) .login-header-videox h1 {
+  color: #1a1a1a;
+}
+
+:root:not(.dark-theme) .login-header-videox p {
+  color: #666;
+}
+
+:root:not(.dark-theme) .login-section-label {
+  color: #555;
+}
+
+:root:not(.dark-theme) .btn-continue:disabled {
+  background: #e0e0e0;
+  color: #999;
+}
+
+:root:not(.dark-theme) .selected-server-display {
+  background: #f5f7fa;
+  border-color: #e0e0e0;
+}
+
+:root:not(.dark-theme) .server-display-label {
+  color: #666;
+}
+
+:root:not(.dark-theme) .server-display-name {
+  color: #1a1a1a;
+}
+
+:root:not(.dark-theme) .server-display-url {
+  color: #666;
+}
+
+:root:not(.dark-theme) .btn-change-server {
+  border-color: #ddd;
+  color: #666;
+}
+
+:root:not(.dark-theme) .btn-change-server:hover {
+  border-color: #1976d2;
+  color: #1976d2;
+}
+
+:root:not(.dark-theme) .form-group-login label {
+  color: #555;
+}
+
+:root:not(.dark-theme) .form-group-login input {
+  background: var(--surface);
+  border-color: var(--border-strong);
+  color: var(--ink-strong);
+}
+
+:root:not(.dark-theme) .form-group-login input::placeholder {
+  color: #999;
+}

@@ -1,0 +1,35 @@
+app:
+  name: "DataQ Genarp"
+  coordinateMax: 1000
+  defaultPageSize: 100
+  maxPageSize: 1000
+  defaultTimeRangeHours: 24
+  dataRetentionDays: 90
+
+display:
+  dateFormat: EU
+  pathVisualization:
+    showStartPoints: true
+    showEndPoints: true
+    pathOpacity: 0.7
+    pathLineWidth: 2
+
+mqtt:
+  enabled: true
+  topicPrefix: "dataq/#"
+  useTls: false
+  rejectUnauthorized: true
+
+playback:
+  enabled: false
+  type: VideoX
+  serverUrl: ""
+  preTime: 5
+  postTime: 5
+
+devices:
+  defaults:
+    retentionDays: null
+    filters:
+      minDistance: 20
+      minAge: 2

@@ -1,0 +1,139 @@
+.occupancy-view {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  padding: 20px 24px 24px;
+  background: var(--surface);
+}
+
+.occupancy-controls {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.7fr) minmax(220px, 1.5fr) minmax(200px, 0.9fr) auto;
+  align-items: end;
+  flex-shrink: 0;
+  gap: 14px;
+}
+
+.timeline-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+}
+
+.occupancy-range-selector {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 12px;
+  margin-top: 16px;
+  overflow-x: auto;
+}
+
+.occupancy-range-selector > span {
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.occupancy-range-selector .mantine-SegmentedControl-root {
+  min-width: 700px;
+}
+
+.occupancy-chart-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-shrink: 0;
+  gap: 20px;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.occupancy-chart-heading h2 {
+  margin: 0;
+  color: var(--ink-strong);
+  font-size: 20px;
+}
+
+.occupancy-chart-heading p {
+  margin: 3px 0 0;
+  color: var(--ink-muted);
+  font-size: 13px;
+}
+
+.occupancy-current {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--ink-muted);
+  font-size: 12px;
+}
+
+.occupancy-current strong {
+  color: var(--ink-strong);
+  font-size: 24px;
+}
+
+.occupancy-chart-shell {
+  position: relative;
+  min-height: 300px;
+  flex: 1;
+  margin-top: 12px;
+}
+
+.occupancy-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 280px;
+  gap: 10px;
+  color: var(--ink-muted);
+  text-align: center;
+}
+
+.occupancy-error {
+  color: var(--danger);
+}
+
+.occupancy-refreshing {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+@media (max-width: 900px) {
+  .occupancy-view {
+    overflow-y: auto;
+    padding: 16px;
+  }
+
+  .occupancy-controls {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .timeline-actions {
+    align-self: end;
+  }
+
+  .occupancy-chart-shell {
+    min-height: 420px;
+    flex: 0 0 420px;
+  }
+}
+
+@media (max-width: 560px) {
+  .occupancy-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .occupancy-chart-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
