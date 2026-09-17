@@ -38,6 +38,16 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
+  useEffect(() => {
+    const handleExpiredSession = () => {
+      setUser(null);
+      setToken(null);
+    };
+
+    window.addEventListener('auth-expired', handleExpiredSession);
+    return () => window.removeEventListener('auth-expired', handleExpiredSession);
+  }, []);
+
   const login = (userData, authToken) => {
     setUser(userData);
     setToken(authToken);
