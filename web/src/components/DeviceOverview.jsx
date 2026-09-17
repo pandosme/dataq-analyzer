@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActionIcon, Badge, Button, Loader, Table, Tooltip } from '@mantine/core';
-import { Activity, ArrowRight, Database, RefreshCw } from 'lucide-react';
+import { ActionIcon, Badge, Button, Group, Loader, Modal, Table, Text, Tooltip } from '@mantine/core';
+import { Activity, ArrowRight, Database, RefreshCw, Trash2 } from 'lucide-react';
 import PropTypes from 'prop-types';
 import { camerasAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import './DeviceOverview.css';
 
 function relativeTime(value, now) {
@@ -23,10 +24,17 @@ function formatDate(value) {
 }
 
 export default function DeviceOverview({ onOpenDevice }) {
+  const { user } = useAuth();
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [now, setNow] = useState(Date.now());
+  // Device queued for permanent removal, awaiting confirmation
+  const [deviceToRemove, setDeviceToRemove] = useState(null);
+  const [removing, setRemoving] = useState(false);
+  const [removeError, setRemoveError] = useState('');
+
+  const canRemoveDevices = user?.role === 'admin';
 
   const loadDevices = useCallback(async (showLoading = false) => {
     try {
@@ -41,6 +49,22 @@ export default function DeviceOverview({ onOpenDevice }) {
       setLoading(false);
     }
   }, []);
+
+  const confirmRemoveDevice = useCallback(async () => {
+    if (!deviceToRemove) return;
+    try {
+      setRemoving(true);
+      setRemoveError('');
+      await camerasAPI.removePermanently(deviceToRemove._id);
+      setDeviceToRemove(null);
+      await loadDevices(true);
+    } catch (requestError) {
+      console.error('Failed to remove device:', requestError);
+      setRemoveError(requestError?.response?.data?.error || 'Could not remove the device.');
+    } finally {
+      setRemoving(false);
+    }
+  }, [deviceToRemove, loadDevices]);
 
   useEffect(() => {
     loadDevices(true);
@@ -104,6 +128,7 @@ export default function DeviceOverview({ onOpenDevice }) {
                   <Table.Th>Status</Table.Th>
                   <Table.Th>Last message</Table.Th>
                   <Table.Th>Stored history</Table.Th>
+                  {canRemoveDevices && <Table.Th aria-label="Remove device" />}
                   <Table.Th aria-label="Open device" />
                 </Table.Tr>
               </Table.Thead>
@@ -141,6 +166,24 @@ export default function DeviceOverview({ onOpenDevice }) {
                       <strong>{device.storedDays || 0} days</strong>
                       <span className="path-count">{(device.pathCount || 0).toLocaleString()} paths</span>
                     </Table.Td>
+                    {canRemoveDevices && (
+                      <Table.Td>
+                        <Tooltip label="Remove device permanently">
+                          <ActionIcon
+                            variant="subtle"
+                            color="red"
+                            aria-label={`Remove ${device.name}`}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setRemoveError('');
+                              setDeviceToRemove(device);
+                            }}
+                          >
+                            <Trash2 size={17} />
+                          </ActionIcon>
+                        </Tooltip>
+                      </Table.Td>
+                    )}
                     <Table.Td>
                       <ArrowRight className="row-arrow" size={18} aria-hidden="true" />
                     </Table.Td>
@@ -151,6 +194,31 @@ export default function DeviceOverview({ onOpenDevice }) {
           </Table.ScrollContainer>
         )}
       </div>
+
+      <Modal
+        opened={Boolean(deviceToRemove)}
+        onClose={() => (removing ? null : setDeviceToRemove(null))}
+        title="Remove device permanently"
+        centered
+      >
+        <Text size="sm">
+          <strong>{deviceToRemove?.name}</strong> ({deviceToRemove?.serialNumber}) and all of its
+          recorded data will be deleted. This cannot be undone.
+        </Text>
+        <Text size="sm" mt="sm" c="dimmed">
+          {(deviceToRemove?.pathCount || 0).toLocaleString()} stored paths will be deleted. If the
+          device is still publishing to MQTT it will be discovered again as a new device.
+        </Text>
+        {removeError && <Text size="sm" mt="sm" c="red">{removeError}</Text>}
+        <Group justify="flex-end" mt="lg">
+          <Button variant="default" onClick={() => setDeviceToRemove(null)} disabled={removing}>
+            Cancel
+          </Button>
+          <Button color="red" onClick={confirmRemoveDevice} loading={removing}>
+            Remove permanently
+          </Button>
+        </Group>
+      </Modal>
     </section>
   );
 }

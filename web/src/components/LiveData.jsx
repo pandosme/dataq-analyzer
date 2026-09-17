@@ -6,6 +6,7 @@ import { camerasAPI } from '../services/api';
 import { useUserPreferences } from '../context/UserPreferencesContext';
 import { useWebSocket } from '../context/WebSocketContext';
 import { formatDateTime as formatDateTimeUtil } from '../utils/dateFormat';
+import useContainerFit from '../hooks/useContainerFit';
 import ThreeColumnLayout from './ThreeColumnLayout';
 import './LiveData.css';
 
@@ -26,6 +27,12 @@ function LiveData({ selectedCamera, cameraDetails }) {
   const videoContainerRef = useRef(null);
   const overlayCanvasRef = useRef(null);
   const playerRef = useRef(null);
+  const viewRef = useRef(null);
+  // Aspect ratio of whatever is on screen (live video or snapshot). The media
+  // box is then sized to exactly this ratio, so the path overlay — which is
+  // stretched across the whole box — lines up with the picture inside it.
+  const [mediaAspect, setMediaAspect] = useState(null);
+  const fitted = useContainerFit(viewRef, mediaAspect);
 
   // Load camera filters when camera changes
   useEffect(() => {
@@ -152,13 +159,12 @@ function LiveData({ selectedCamera, cameraDetails }) {
         containerHeight = videoWidth;
       }
 
-      // Set video-container to explicit pixel dimensions
-      // This matches the working pattern from the user's other projects
-      videoContainerRef.current.style.width = `${containerWidth}px`;
-      videoContainerRef.current.style.height = `${containerHeight}px`;
+      // Publish the aspect ratio; a separate effect sizes the container to the
+      // largest box of this shape that fits. Pinning width/height here instead
+      // let max-width/max-height clamp one axis only, so the box drifted away
+      // from the video's aspect and the overlay no longer matched the picture.
       videoContainerRef.current.style.position = 'relative';
-      videoContainerRef.current.style.maxWidth = '100%';
-      videoContainerRef.current.style.maxHeight = '100%';
+      setMediaAspect(containerWidth / containerHeight);
 
       // Build player HTML string with all attributes
       // This approach ensures all attributes are set at creation time, not after
@@ -317,6 +323,7 @@ function LiveData({ selectedCamera, cameraDetails }) {
         img.onload = () => {
           canvas.width = img.width;
           canvas.height = img.height;
+          setMediaAspect(img.width / img.height);
           ctx.drawImage(img, 0, 0);
           drawPathOverlays();
         };
@@ -446,9 +453,18 @@ function LiveData({ selectedCamera, cameraDetails }) {
     </div>
   );
 
+  // Size the live video box to the fitted media box so the overlay canvas,
+  // which spans the whole box, matches the video inside it.
+  useEffect(() => {
+    const container = videoContainerRef.current;
+    if (!container || !fitted.width || !fitted.height) return;
+    container.style.width = `${fitted.width}px`;
+    container.style.height = `${fitted.height}px`;
+  }, [fitted.width, fitted.height]);
+
   // Middle Panel Content
   const middlePanel = (
-    <div className="camera-view-container">
+    <div className="camera-view-container" ref={viewRef}>
       {!selectedCamera ? (
         <div className="no-camera-selected">
           <p>Select a camera to view live path detections</p>
@@ -468,7 +484,11 @@ function LiveData({ selectedCamera, cameraDetails }) {
         </div>
       ) : (
         // Remote camera with snapshot
-        <canvas ref={canvasRef} className="camera-canvas" />
+        <canvas
+          ref={canvasRef}
+          className="camera-canvas"
+          style={fitted.width ? { width: `${fitted.width}px`, height: `${fitted.height}px` } : undefined}
+        />
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ActionIcon, Button, Drawer, Menu, SegmentedControl, Select, Tooltip } from '@mantine/core';
-import { Activity, BarChart3, ChevronDown, LogOut, Search, Settings, SlidersHorizontal } from 'lucide-react';
+import { Activity, ChevronDown, LogOut, Search, Settings, SlidersHorizontal } from 'lucide-react';
 import FilterPanel from './components/FilterPanel';
 import FlowHeatmap from './components/FlowHeatmap';
 import DwellHeatmap from './components/DwellHeatmap';
@@ -16,6 +16,17 @@ import { appInfoAPI, pathsAPI, camerasAPI } from './services/api';
 import { useAuth } from './context/AuthContext';
 import { useWebSocket } from './context/WebSocketContext';
 import './App.css';
+
+// Use cases shown in the workspace's "Use case" selector, in display order.
+const USE_CASES = [
+  { label: 'Flow', value: 'flow-heatmap' },
+  { label: 'Dwell', value: 'dwell-heatmap' },
+  { label: 'Occupancy', value: 'occupancy' },
+  { label: 'Forensic', value: 'forensic-search' },
+  { label: 'Live', value: 'live-view' },
+  { label: 'Counters', value: 'counters' },
+];
+const WORKSPACE_MODES = USE_CASES.map((useCase) => useCase.value);
 
 // Dwell Heatmap: always queries a fixed 1-month window and excludes points
 // where objects idled for less than DWELL_MIN_IDLE seconds.
@@ -258,8 +269,6 @@ function App() {
     setStats(null);
   };
 
-  const selectedDevice = devices.find((device) => device.serialNumber === selectedCamera) || cameraDetails;
-
   // Shared three-column layout for Flow and Dwell heatmaps
   const renderHeatmap = (appId) => {
     const isFlow = appId === 'flow-heatmap';
@@ -318,9 +327,12 @@ function App() {
     );
   };
 
-  const isAnalysis = ['flow-heatmap', 'dwell-heatmap', 'occupancy', 'forensic-search'].includes(selectedApplication);
-  const analysisMode = isAnalysis ? selectedApplication : 'flow-heatmap';
-  const analysisSummary = selectedApplication === 'occupancy'
+  const isWorkspace = WORKSPACE_MODES.includes(selectedApplication);
+  const analysisSummary = selectedApplication === 'counters'
+    ? 'Counter sets across all devices'
+    : selectedApplication === 'live-view'
+    ? 'Live path updates as they arrive'
+    : selectedApplication === 'occupancy'
     ? 'Occupancy changes over time'
     : Object.keys(filters).length === 0
     ? 'Configure a query to load path data'
@@ -341,8 +353,7 @@ function App() {
           </button>
           <nav className="app-navigation">
             <button className={`nav-tab ${selectedApplication === 'devices' ? 'active' : ''}`} onClick={() => handleApplicationChange('devices')}>Devices</button>
-            <button className={`nav-tab ${['live-view', 'flow-heatmap', 'dwell-heatmap', 'occupancy', 'forensic-search'].includes(selectedApplication) ? 'active' : ''}`} onClick={() => handleApplicationChange(selectedCamera ? 'live-view' : 'devices')}>Workspace</button>
-            <button className={`nav-tab ${selectedApplication === 'counters' ? 'active' : ''}`} onClick={() => handleApplicationChange('counters')}>Counters</button>
+            <button className={`nav-tab ${isWorkspace ? 'active' : ''}`} onClick={() => handleApplicationChange(selectedCamera ? 'live-view' : 'devices')}>Workspace</button>
           </nav>
         </div>
 
@@ -382,13 +393,9 @@ function App() {
         </div>
       </header>
 
-      {selectedCamera && ['live-view', 'flow-heatmap', 'dwell-heatmap', 'occupancy', 'forensic-search'].includes(selectedApplication) && (
+      {selectedCamera && isWorkspace && (
         <div className="device-context-bar">
           <button className="back-to-devices" onClick={() => handleApplicationChange('devices')}>← Devices</button>
-          <div className="selected-device-title">
-            <strong>{selectedDevice?.name || selectedCamera}</strong>
-            <span>{selectedDevice?.model || selectedCamera}</span>
-          </div>
           <Select
             className="device-switcher"
             searchable
@@ -398,10 +405,6 @@ function App() {
             data={devices.map((device) => ({ value: device.serialNumber, label: `${device.name} · ${device.serialNumber}` }))}
             aria-label="Switch device"
           />
-          <div className="workspace-tabs">
-            <button className={selectedApplication === 'live-view' ? 'active' : ''} onClick={() => handleApplicationChange('live-view')}><Activity size={16} />Live</button>
-            <button className={isAnalysis ? 'active' : ''} onClick={() => handleApplicationChange('flow-heatmap')}><BarChart3 size={16} />Analyze</button>
-          </div>
           <Tooltip label={wsConnected ? 'Live connection active' : 'Live connection unavailable'}>
             <ActionIcon variant="subtle" color={wsConnected ? 'teal' : 'gray'} aria-label="Connection status">
               <span className={`connection-dot ${wsConnected ? 'online' : ''}`} />
@@ -412,41 +415,36 @@ function App() {
 
       <main className="main-content">
         {selectedApplication === 'devices' && <DeviceOverview onOpenDevice={openDevice} />}
-        {selectedApplication === 'live-view' && (
-          <LiveData
-            selectedCamera={selectedCamera}
-            cameraDetails={cameraDetails}
-          />
-        )}
 
-        {isAnalysis && (
+        {isWorkspace && (
           <section className="analysis-workspace">
             <div className="analysis-toolbar">
               <div className="analysis-mode">
-                <span>Analysis</span>
+                <span>Use case</span>
                 <SegmentedControl
-                  value={analysisMode}
+                  value={selectedApplication}
                   onChange={handleApplicationChange}
-                  data={[
-                    { label: 'Flow', value: 'flow-heatmap' },
-                    { label: 'Dwell', value: 'dwell-heatmap' },
-                    { label: 'Occupancy', value: 'occupancy' },
-                    { label: 'Forensic', value: 'forensic-search' },
-                  ]}
+                  data={USE_CASES}
                 />
               </div>
               <p className="query-summary">{analysisSummary}</p>
-              {selectedApplication !== 'occupancy' && (
+              {!['occupancy', 'live-view', 'counters'].includes(selectedApplication) && (
                 <Button leftSection={<SlidersHorizontal size={16} />} onClick={() => setQueryOpen(true)}>
                   Query
                 </Button>
               )}
             </div>
             <div className="analysis-content">
+              {selectedApplication === 'live-view' && (
+                <LiveData
+                  selectedCamera={selectedCamera}
+                  cameraDetails={cameraDetails}
+                />
+              )}
               {selectedApplication === 'flow-heatmap' && renderHeatmap('flow-heatmap')}
               {selectedApplication === 'dwell-heatmap' && renderHeatmap('dwell-heatmap')}
               {selectedApplication === 'occupancy' && <OccupancyChart selectedCamera={selectedCamera} />}
-              {selectedApplication === 'forensic-search' && (
+                    {selectedApplication === 'forensic-search' && (
                 <ForensicSearch
                   pathData={pathData}
                   backgroundImage={backgroundImage}
@@ -460,7 +458,7 @@ function App() {
                 />
               )}
             </div>
-            {!['forensic-search', 'occupancy'].includes(selectedApplication) && (
+            {!['forensic-search', 'occupancy', 'live-view', 'counters'].includes(selectedApplication) && (
               <Drawer
                 opened={queryOpen}
                 onClose={() => setQueryOpen(false)}
@@ -482,7 +480,10 @@ function App() {
           </section>
         )}
 
-        {selectedApplication === 'counters' && <Counters />}
+        {selectedApplication === 'counters' && (
+                /* Keyed by device so switching device resets the counter views */
+                <Counters key={selectedCamera} selectedCamera={selectedCamera} />
+              )}
       </main>
 
       {settingsSection && (

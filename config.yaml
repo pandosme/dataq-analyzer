@@ -1,5 +1,5 @@
 app:
-  name: "DataQ Genarp"
+  name: "DataQ Analyzer"
   coordinateMax: 1000
   defaultPageSize: 100
   maxPageSize: 1000

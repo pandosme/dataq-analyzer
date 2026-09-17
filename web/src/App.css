@@ -255,8 +255,7 @@
 }
 
 .device-context-bar {
-  display: grid;
-  grid-template-columns: auto minmax(180px, auto) minmax(220px, 320px) 1fr auto;
+  display: flex;
   align-items: center;
   gap: 18px;
   min-height: 58px;
@@ -282,61 +281,11 @@
   color: var(--accent);
 }
 
-.selected-device-title {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-}
-
-.selected-device-title strong {
-  overflow: hidden;
-  color: var(--ink-strong);
-  font-size: 14px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.selected-device-title span {
-  overflow: hidden;
-  color: var(--ink-muted);
-  font-size: 11px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
+/* Device switcher carries the device name, so it sits next to the back link
+   and pushes the connection indicator to the far right. */
 .device-switcher {
   min-width: 220px;
-}
-
-.workspace-tabs {
-  display: flex;
-  align-self: stretch;
-  justify-self: center;
-  gap: 6px;
-}
-
-.workspace-tabs button {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 0 14px;
-  color: var(--ink-muted);
-  background: transparent;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.workspace-tabs button:hover,
-.workspace-tabs button.active {
-  color: var(--accent-strong);
-}
-
-.workspace-tabs button.active {
-  border-bottom-color: var(--accent);
+  margin-right: auto;
 }
 
 .connection-dot {
@@ -541,13 +490,10 @@
     display: none;
   }
 
-  .device-context-bar {
-    grid-template-columns: auto 1fr auto;
-  }
-
-  .selected-device-title,
+  /* The switcher is now the only place the device name appears, so it stays
+     visible at narrow widths and just gets tighter. */
   .device-switcher {
-    display: none;
+    min-width: 150px;
   }
 }
 

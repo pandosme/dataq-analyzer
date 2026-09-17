@@ -30,7 +30,10 @@ RUN npm ci --only=production
 # Copy backend source code
 COPY src/ ./src/
 COPY public/ ./public/
+COPY scripts/ ./scripts/
 COPY config.yaml ./config.yaml
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Copy built web UI from builder stage
 COPY --from=web-builder /app/web/dist ./dist/web
@@ -48,4 +51,5 @@ EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
   CMD node -e "require('http').get('http://localhost:80/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
 
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", "src/server.js"]

@@ -1,4 +1,4 @@
-import { Camera, PathEvent } from '../models/index.js';
+import { Camera, OccupancyEvent, PathEvent } from '../models/index.js';
 import * as configService from './configService.js';
 import logger from '../utils/logger.js';
 import { getVisibleDeviceFilter } from '../middleware/auth.js';
@@ -238,6 +238,34 @@ export async function deleteCamera(id, archivedBy) {
 
 export async function purgeCamera(id) {
   return Camera.findByIdAndDelete(id);
+}
+
+/**
+ * Permanently remove a device together with everything it has recorded.
+ * Unlike deleteCamera(), which only archives, this cannot be undone.
+ * @param {string} id - Camera document ID
+ * @returns {Promise<Object|null>} Deletion summary, or null when not found
+ */
+export async function purgeCameraWithData(id) {
+  const camera = await Camera.findById(id).lean();
+  if (!camera) return null;
+
+  const { serialNumber } = camera;
+  const [paths, occupancy] = await Promise.all([
+    PathEvent.deleteMany({ serial: serialNumber }),
+    OccupancyEvent.deleteMany({ serial: serialNumber }),
+  ]);
+  await Camera.findByIdAndDelete(id);
+
+  const summary = {
+    serialNumber,
+    name: camera.name,
+    pathEventsDeleted: paths.deletedCount || 0,
+    occupancyEventsDeleted: occupancy.deletedCount || 0,
+  };
+
+  logger.info('Device permanently removed', summary);
+  return summary;
 }
 
 /**

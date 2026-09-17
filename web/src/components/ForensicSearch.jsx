@@ -250,9 +250,13 @@ function ForensicSearch({ pathData, backgroundImage, selectedCamera, onQuery, lo
       canvas.width = videoDimensions.videoWidth;
       canvas.height = videoDimensions.videoHeight;
     } else if (!videoInfo && imageRef.current) {
-      // Use container-fitted size if available, otherwise fall back to image size
-      canvas.width = fitted.width || imageRef.current.width;
-      canvas.height = fitted.height || imageRef.current.height;
+      // Wait for the container measurement. Falling back to the image's natural
+      // size here would lay the canvas out larger than its container, which then
+      // re-measures and re-fits — the image visibly grows and shoves the results
+      // table sideways until it settles.
+      if (!fitted.width || !fitted.height) return;
+      canvas.width = fitted.width;
+      canvas.height = fitted.height;
     }
 
     // Clear canvas
@@ -972,10 +976,14 @@ function ForensicSearch({ pathData, backgroundImage, selectedCamera, onQuery, lo
               onClick={handleCanvasClick}
               style={{
                 display: imageLoaded || videoInfo ? 'block' : 'none',
-                ...(videoInfo && videoDimensions ? {
-                  width: videoDimensions.width + 'px',
-                  height: videoDimensions.height + 'px'
-                } : {}),
+                ...(videoInfo && videoDimensions
+                  ? {
+                      width: videoDimensions.width + 'px',
+                      height: videoDimensions.height + 'px'
+                    }
+                  : fitted.width
+                  ? { width: fitted.width + 'px', height: fitted.height + 'px' }
+                  : {}),
                 cursor: drawingMode ? 'crosshair' : (resizeInfo ? (resizeInfo.mode === 'move' ? 'move' : (resizeInfo.cursor || 'grabbing')) : hoverCursor)
               }}
             />

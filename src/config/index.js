@@ -13,6 +13,9 @@ const booleanFromEnv = z
   .default('false')
   .transform((value) => value === 'true');
 
+const emptyAsUndefined = (schema) =>
+  z.preprocess((value) => (value === '' ? undefined : value), schema);
+
 const environmentSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('production'),
   PORT: z.coerce.number().int().min(1).max(65535).default(80),
@@ -31,8 +34,11 @@ const environmentSchema = z.object({
   JWT_SECRET: z.string().min(32).optional(),
   JWT_EXPIRES_IN: z.string().min(1).default('7d'),
   CREDENTIAL_ENCRYPTION_KEY: z.string().min(32).optional(),
-  BOOTSTRAP_ADMIN_USERNAME: z.string().min(1).optional(),
-  BOOTSTRAP_ADMIN_PASSWORD: z.string().min(12).optional(),
+  // Compose always supplies these keys (`${VAR:-}`), so an unset variable
+  // arrives as an empty string. Treat that as "not provided" rather than as a
+  // value that fails the length check and stops the container from starting.
+  BOOTSTRAP_ADMIN_USERNAME: emptyAsUndefined(z.string().min(1).optional()),
+  BOOTSTRAP_ADMIN_PASSWORD: emptyAsUndefined(z.string().min(12).optional()),
   VIDEOX_API_KEY: z.string().default(''),
 });
 

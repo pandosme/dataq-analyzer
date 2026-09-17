@@ -253,6 +253,29 @@ router.delete('/:id', ...editorGuard, requireDeviceOwner, async (req, res) => {
 });
 
 /**
+ * DELETE /api/cameras/:id/permanent
+ * Permanently remove a device and all of its recorded data (admin only).
+ * This cannot be undone. Use DELETE /api/cameras/:id to archive instead.
+ */
+router.delete('/:id/permanent', ...editorGuard, requireDeviceOwner, async (req, res) => {
+  try {
+    const summary = await cameraService.purgeCameraWithData(req.params.id);
+    if (!summary) {
+      return res.status(404).json({ success: false, error: 'Camera not found' });
+    }
+    await resubscribeToCameras();
+    res.json({
+      success: true,
+      message: `Device ${summary.name || summary.serialNumber} removed permanently`,
+      data: summary,
+    });
+  } catch (error) {
+    logger.error('Error purging camera', { error: error.message, id: req.params.id });
+    res.status(500).json({ success: false, error: 'Failed to remove device' });
+  }
+});
+
+/**
  * GET /api/cameras/:serialNumber/snapshot
  * Get camera snapshot (latest image)
  */

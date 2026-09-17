@@ -55,7 +55,9 @@ async function migrateLegacyUserIdentityFields() {
     await User.collection.dropIndex('email_1');
     logger.info('Removed legacy user email index');
   } catch (error) {
-    if (error.codeName !== 'IndexNotFound') {
+    // NamespaceNotFound: a first start against an empty database, where the
+    // users collection does not exist yet. Neither case is an error.
+    if (error.codeName !== 'IndexNotFound' && error.codeName !== 'NamespaceNotFound') {
       throw error;
     }
   }

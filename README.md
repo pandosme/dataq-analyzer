@@ -1,165 +1,252 @@
 # DataQ Analyzer
 
-DataQ Analyzer is a single Node.js application for collecting, storing, and analyzing Axis DataQ path events. Express serves the React analytics interface, REST API, and WebSocket endpoints from one origin.
+A working reference implementation for collecting, storing and analysing path
+data from Axis devices. One Node.js process serves a React interface, a REST
+API and WebSocket endpoints; MongoDB holds the data; MQTT carries it in.
 
-The project is currently private and under migration from the former backend and frontend repositories.
+**Treat this as a recipe, not a product.** It is a description of one way to
+build a path-analytics system, published so that you can read it, run it, take
+it apart and build your own version. Run it as-is if it fits, or use it as the
+starting point for something customised. There is no roadmap, no support
+commitment and no guarantee that the next change will be backwards compatible.
 
-## Features
+> This application is not endorsed, supported, or maintained by Axis
+> Communications. It is an independent project. Axis is not responsible for it
+> in any way, and no support should be expected from Axis for anything here.
 
-- Flow and dwell heatmaps
-- Forensic path search with video playback
-- Live path events over WebSocket
-- Directional counters with historical backfill
-- MQTT ingestion and automatic device discovery
-- One generic device model for camera and radar data
-- Administrator and read-only viewer roles
-- MongoDB persistence
+## Concept
 
-## Architecture
+Axis devices do the detection. A device-side ACAP tracks objects and publishes
+each finished path as an MQTT message. This application subscribes to those
+messages, stores them, and gives you ways to look at them.
 
 ```text
-Browser
-  -> Express :80
-       -> React SPA /
-       -> REST /api
-       -> WebSocket /ws/paths and /ws/video
-       -> MongoDB
-       -> MQTT broker
-       -> VideoX, ACS, or Milestone
+Axis device (DataQ ACAP)
+  -> MQTT broker
+       -> DataQ Analyzer  --  MongoDB
+            -> Browser: heatmaps, forensic search, counters, live view
 ```
 
-MongoDB remains a separate service. The supplied Compose file starts MongoDB locally; an external MongoDB can be selected with `MONGODB_URI`.
+The data model is deliberately simple. A *path* is one object's journey through
+the scene: a class (Human, Car, ...), a list of coordinates in a 1000x1000
+normalised space, a timestamp, a duration, and how far it travelled. Everything
+the interface shows is derived from that one record type.
 
-## Configuration
+Devices are not configured here. They announce themselves over MQTT and appear
+automatically, which means adding a camera to the system is a matter of pointing
+its ACAP at the same broker.
 
-Configuration is read at startup. Changes require an application restart.
+### What you can do with the data
 
-- `config.yaml` contains non-secret installation policy and defaults.
-- `.env` contains deployment endpoints, credentials, and cryptographic secrets.
-- `.env.example` documents all supported deployment variables.
-- User preferences and operational data remain in MongoDB.
+- **Flow** — heatmap of where objects move through a scene
+- **Dwell** — heatmap weighted by how long objects idled
+- **Occupancy** — how many objects were present in an area over time
+- **Forensic** — search paths by class, time, duration, entry and exit areas,
+  with optional video playback from a recording server
+- **Live** — paths drawn as they arrive
+- **Counters** — directional counts between zones you draw on the scene, with
+  historical backfill
 
-Never commit `.env`, certificates, private keys, or production configuration backups.
+## Prerequisite: the DataQ ACAP
 
-Run the interactive setup assistant:
+This application has no detection of its own. **It is useless without the DataQ
+ACAP installed on your Axis devices** — that is what produces the path data.
 
-```bash
-npm run configure
-```
+Install it from **<https://pandosme.github.io/acap/2025/01/18/DataQ.html>**,
+which also documents the device-side settings and the MQTT payloads.
 
-It guides you through MongoDB, MQTT, playback, administrator, retention, and
-display settings. It generates cryptographic secrets locally, hides credential
-input, backs up existing files, and validates the completed configuration.
+On each device: install the ACAP, point it at your MQTT broker, and confirm it
+publishes. The ACAP is the agent; this application is only the collector and the
+analysis surface. If no devices are publishing, the interface comes up empty.
 
-You can also configure a deployment directory without changing this checkout:
+You also need an MQTT broker. Any broker works — Mosquitto is fine. Devices and
+this application must reach the same one.
 
-```bash
-./setup.sh --target /path/to/deployment
-```
+## Quick start
 
-At minimum, the resulting configuration contains:
-
-- `JWT_SECRET`: at least 32 random characters
-- `CREDENTIAL_ENCRYPTION_KEY`: at least 32 random characters
-- `BOOTSTRAP_ADMIN_USERNAME` and `BOOTSTRAP_ADMIN_PASSWORD` for the first startup
-- `MONGODB_URI` when MongoDB is not the Compose service
-
-Bootstrap credentials create a database administrator only when no administrator exists. Remove them from the deployment environment after verifying the first login.
-
-Validate configuration:
-
-```bash
-npm run config:check
-```
-
-## Container Deployment
-
-Build the private image locally:
+Nothing to clone. With Docker installed:
 
 ```bash
-npm run docker:build
-```
-
-Start the application and bundled MongoDB:
-
-```bash
-npm run configure
+mkdir dataq && cd dataq
+docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/out" pandosme/dataq-analyzer:latest init
 docker compose up -d
-docker compose logs -f app
 ```
 
-The default URL is `http://localhost:3303`.
+`init` writes `docker-compose.yml`, `docker-compose.mongodb.yml`, `config.yaml`
+and `.env` into the current directory. It generates the cryptographic secrets
+locally and prints a one-time administrator username and password. Nothing
+leaves your machine.
 
-The setup assistant selects `docker-compose.mongodb.yml` when you choose the
-bundled database. For an external MongoDB it uses only `docker-compose.yml`, so
-no unused local database container is started.
+Then open <http://localhost:3303> and log in with the credentials it printed.
 
-Use immutable image tags for production:
+If you already know your broker, hand it over and MQTT is enabled from the
+start:
 
 ```bash
-DATAQ_VERSION=v0.1.0 docker compose up -d
+docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/out" pandosme/dataq-analyzer:latest init --mqtt-broker-url=mqtt://broker.example.com:1883
 ```
 
-## Host Development
+Without it, MQTT is written **disabled** so the first start succeeds; set
+`MQTT_BROKER_URL` in `.env` and `mqtt.enabled: true` in `config.yaml` when you
+are ready, then `docker compose up -d`.
 
-Node.js 20 or newer is required.
+Other `init` options:
+
+| Option | Effect |
+| --- | --- |
+| `--external-mongodb` | Skip the bundled MongoDB; set `MONGODB_URI` yourself |
+| `--mqtt-broker-url=URL` | Enable MQTT immediately against this broker |
+| `--force` | Overwrite files that already exist |
+| `<directory>` | Write somewhere other than `/out` |
+
+### After first login
+
+The bootstrap administrator exists only to get you in. Once you have logged in,
+blank these in `.env` and run `docker compose up -d`:
+
+```bash
+BOOTSTRAP_ADMIN_USERNAME=
+BOOTSTRAP_ADMIN_PASSWORD=
+```
+
+They are read **only while no administrator exists in the database**, so leaving
+them set does nothing on a system that already has one — but it does leave a
+password sitting in a file. If you ever lose every administrator account, put
+them back and restart to recover.
+
+## Ways to deploy it
+
+### 1. Run it as-is
+
+The quick start above. Bundled MongoDB, one container each, data in a Docker
+volume. Suitable for a single site, a demo, or a pilot.
+
+The application is published on `127.0.0.1` only. To reach it from elsewhere,
+put a reverse proxy in front that terminates TLS, and set `CORS_ORIGIN` in
+`.env` to the URL the browser actually uses.
+
+### 2. Run it against your own infrastructure
+
+Use `init --external-mongodb` and point `MONGODB_URI` at an existing MongoDB —
+a managed cluster, a replica set, whatever you already operate. Set
+`MONGODB_AUTH_REQUIRED`, `MONGODB_USERNAME` and `MONGODB_PASSWORD` if it needs
+credentials.
+
+Pin an immutable tag rather than tracking `latest`:
+
+```bash
+DATAQ_VERSION=1.1.0 docker compose up -d
+```
+
+### 3. Build your own image
+
+Clone the repository and build it:
 
 ```bash
 npm run setup
+npm run docker:build
+```
+
+`docker-compose.build.yml` builds and tags the image. Change the image name in
+it to publish to your own registry. This is the path to take if you are
+modifying the code — see [AGENTS.md](AGENTS.md).
+
+### 4. Run it from source
+
+Node.js 20 or newer:
+
+```bash
+npm run setup
+./setup.sh
 npm run dev:db
 npm run dev
 ```
 
-`npm run dev:db` starts only the bundled MongoDB container and publishes it on
-`127.0.0.1:27017`. `npm run dev` starts the Express server under nodemon and the
-Vite development server together. The generated production values in `.env`
-are overridden only for these local processes.
+`npm run setup` installs server and web dependencies, `./setup.sh` is an
+interactive configuration assistant, `npm run dev:db` starts the bundled MongoDB
+on `127.0.0.1:27017`, and `npm run dev` runs Express on `:3303` and Vite on
+`:3403` together.
 
-Open `http://localhost:3403`. Vite proxies API and WebSocket traffic to the
-backend on port `3303`, and source changes reload continuously.
+Open <http://localhost:3403>. Vite proxies API and WebSocket traffic to the
+backend and reloads on change.
 
-## Validation
+`./setup.sh --target /path/to/deployment` configures a deployment directory
+without touching your checkout.
+
+## Configuration
+
+Two files, read once at startup. Changes need a restart.
+
+**`config.yaml`** — installation policy, no secrets. Application name, retention
+in days, page sizes, date format, which features are on (MQTT, playback), and
+per-device defaults. Mounted read-only into the container.
+
+**`.env`** — endpoints, credentials and secrets. Never commit it.
+
+| Variable | Notes |
+| --- | --- |
+| `JWT_SECRET` | 32+ characters. Changing it logs everyone out. |
+| `CREDENTIAL_ENCRYPTION_KEY` | 32+ characters. **Lose it and stored device credentials are unrecoverable.** |
+| `MONGODB_URI` | Full connection string, or use the `MONGODB_*` parts |
+| `MQTT_BROKER_URL` | Required when `mqtt.enabled: true`, otherwise startup fails |
+| `CORS_ORIGIN` | The browser-facing origin |
+| `BOOTSTRAP_ADMIN_*` | First-administrator recovery only; see above |
+| `VIDEOX_API_KEY` | Only when playback is enabled |
+
+Validate before starting:
 
 ```bash
 npm run config:check
-npm run lint
-npm run build
-docker compose -f docker-compose.build.yml build
 ```
 
-The migrated frontend currently has non-blocking React Compiler lint warnings that will be resolved as its state management is simplified.
+### Retention
 
-## Access Model
+`dataRetentionDays` in `config.yaml` is the default; a per-device override can
+be set on each device. A cleanup runs at local midnight and deletes paths older
+than the limit. **This deletes data permanently** — set it deliberately before
+pointing this at a database you care about, and note that a per-device override
+wins over the global default.
 
-- **Administrator:** manages users and application data.
-- **Viewer:** has read-only access to all active device data.
+## Access model
 
-Devices observed on `dataq/connect/+`, `dataq/status/+`, or `dataq/image/+` are created and enabled immediately. Retained connect announcements are processed when the MQTT client subscribes. Removing a device archives it so historical events and counters remain attributable.
+Two roles. **Administrator** manages users, devices and data. **Viewer** reads
+everything and changes nothing.
 
-## Repository Layout
+Devices announcing on `dataq/connect/+`, `dataq/status/+` or `dataq/image/+` are
+created and enabled immediately, including retained announcements replayed when
+the client subscribes. Removing a device deletes it and its recorded paths
+permanently — and if the device is still publishing, it will be discovered again
+within seconds.
+
+Device credentials are encrypted with AES-256-GCM before being written to
+MongoDB and decrypted only at the VAPIX boundary.
+
+## Before you point this at data you care about
+
+1. Take and **verify** a `mongodump` backup.
+2. Check `dataRetentionDays` against the history you actually want to keep.
+3. Rehearse the whole thing against a restored copy first.
+4. Keep the previous images and the pre-change dump through your rollback window.
+
+## Repository layout
 
 ```text
-src/                 Express, MongoDB, MQTT, WebSocket, and integration code
+src/                 Express, MongoDB, MQTT, WebSocket, integrations
 web/                 React/Vite application
+scripts/init.js      Deployment initialiser, shipped inside the image
 public/              Server-owned static assets
 config.yaml          Non-secret installation configuration
 .env.example         Deployment and secret variable template
 Dockerfile           Multi-stage web and server image
-Docker-compose.yml   Application and optional MongoDB deployment
+docker-compose.yml   Application; docker-compose.mongodb.yml adds the database
 ```
 
-## Migration Safety
+## Further reading
 
-Before using this build with production data:
-
-1. Create and verify a `mongodump` backup.
-2. Rehearse schema and ownership migration against a restored copy.
-3. Review discovered devices and user roles.
-4. Keep the old application images and pre-migration dump through the rollback window.
-5. Rotate credentials that appeared in legacy repository utility scripts.
-
-See [API.md](API.md) for the inherited API reference. It is being updated as authorization and configuration endpoints are consolidated.
+- [AGENTS.md](AGENTS.md) — customising this codebase, with or without an LLM
+- [API.md](API.md) — REST and WebSocket reference
+- [DataQ ACAP](https://pandosme.github.io/acap/2025/01/18/DataQ.html) — the device-side agent
 
 ## License
 
-MIT
+MIT. Use it, fork it, rewrite it. No warranty of any kind.

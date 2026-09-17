@@ -62,6 +62,12 @@ export const camerasAPI = {
     const response = await getApi().put(`/cameras/${id}`, data);
     return response.data;
   },
+
+  // Permanently removes the device and every path/occupancy event it recorded.
+  removePermanently: async (id) => {
+    const response = await getApi().delete(`/cameras/${id}/permanent`);
+    return response.data;
+  },
 };
 
 // Path Events API

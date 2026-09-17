@@ -289,7 +289,7 @@ function ZoneEditor({ snapshot, zones, paths, onChange, readOnly }) {
 }
 
 // ─── Counter List ─────────────────────────────────────────────────────────────
-function CounterList({ sets, loading, onRefresh, onCreate, onSelect, readOnly }) {
+function CounterList({ sets, loading, onRefresh, onCreate, onSelect, readOnly, showCamera = true }) {
   return (
     <div className="counter-list">
       <div className="counter-list-header">
@@ -304,7 +304,7 @@ function CounterList({ sets, loading, onRefresh, onCreate, onSelect, readOnly })
 
       {!loading && sets.length === 0 && (
         <div className="empty-state">
-          <p>No counter sets defined yet.</p>
+          <p>{showCamera ? 'No counter sets defined yet.' : 'No counter sets for this device yet.'}</p>
           {!readOnly && <button className="btn-primary" onClick={onCreate}>Create your first Counter Set</button>}
         </div>
       )}
@@ -314,7 +314,7 @@ function CounterList({ sets, loading, onRefresh, onCreate, onSelect, readOnly })
           <thead>
             <tr>
               <th>Name</th>
-              <th>Camera</th>
+              {showCamera && <th>Camera</th>}
               <th>Zones</th>
               <th>Total Count</th>
               <th>Days Active</th>
@@ -325,7 +325,7 @@ function CounterList({ sets, loading, onRefresh, onCreate, onSelect, readOnly })
             {sets.map(s => (
               <tr key={s._id} className="clickable-row" onClick={() => onSelect(s)}>
                 <td><strong>{s.name}</strong></td>
-                <td><code>{s.serial}</code></td>
+                {showCamera && <td><code>{s.serial}</code></td>}
                 <td>{s.zones.map(z => z.label).join(' ')}</td>
                 <td className="count-cell">{totalCount(s).toLocaleString()}</td>
                 <td>{s.days ?? 0}</td>
@@ -871,9 +871,11 @@ function CounterDetail({ set: initialSet, onBack, onChanged, onDelete, readOnly 
 }
 
 // ─── Create Wizard ────────────────────────────────────────────────────────────
-function CounterCreate({ onSave, onCancel }) {
+function CounterCreate({ onSave, onCancel, deviceSerial }) {
   const [step, setStep]               = useState(1);
-  const [camera, setCamera]           = useState('');
+  // When opened from a device workspace the device is fixed and the picker
+  // is hidden; the standalone flow still lets the user choose.
+  const [camera, setCamera]           = useState(deviceSerial || '');
   const [snapshot, setSnapshot]       = useState(null);
   const [paths, setPaths]             = useState([]);
   const [showPaths, setShowPaths]     = useState(false);
@@ -1006,11 +1008,18 @@ function CounterCreate({ onSave, onCancel }) {
       {step === 1 && (
         <div className="wizard-step">
           <h3>Step 1 — Draw Zones</h3>
-          <p className="step-hint">Select a camera, then <strong>click and drag</strong> rectangles on the snapshot to define 2–6 zones. Toggle &quot;Show paths&quot; to see recent object paths and guide placement.</p>
+          <p className="step-hint">
+            {deviceSerial ? <><strong>Click and drag</strong> rectangles on the snapshot to define 2–6 zones.</> : <>Select a camera, then <strong>click and drag</strong> rectangles on the snapshot to define 2–6 zones.</>}
+            {' '}Toggle &quot;Show paths&quot; to see recent object paths and guide placement.
+          </p>
           <div className="step1-layout">
             <div className="step1-sidebar">
-              <label className="field-label">Camera</label>
-              <CameraSelector selectedCamera={camera} onCameraChange={c => { setCamera(c); setZones([]); }} />
+              {!deviceSerial && (
+                <>
+                  <label className="field-label">Camera</label>
+                  <CameraSelector selectedCamera={camera} onCameraChange={c => { setCamera(c); setZones([]); }} />
+                </>
+              )}
               {loadingSnap && <p className="hint">Loading snapshot…</p>}
               {zones.length > 0 && (
                 <div className="zone-list">
@@ -1153,13 +1162,17 @@ function CounterCreate({ onSave, onCancel }) {
 }
 
 // ─── Main Counters Component ──────────────────────────────────────────────────
-export default function Counters() {
+export default function Counters({ selectedCamera }) {
   const { isViewer } = useAuth();
   const viewer = isViewer();
   const [view, setView]     = useState('list'); // 'list' | 'create' | 'detail'
   const [sets, setSets]     = useState([]);
   const [selected, setSelected] = useState(null);
   const [loading, setLoading]   = useState(false);
+
+  // Counter sets belong to a device, so the workspace only shows the ones
+  // recorded for the device currently selected.
+  const visibleSets = selectedCamera ? sets.filter(s => s.serial === selectedCamera) : sets;
 
   const loadList = useCallback(async () => {
     setLoading(true);
@@ -1187,7 +1200,9 @@ export default function Counters() {
     setView('detail');
   };
 
-  if (view === 'create' && !viewer) return <CounterCreate onSave={handleSaved} onCancel={() => setView('list')} />;
+  if (view === 'create' && !viewer) return (
+    <CounterCreate onSave={handleSaved} onCancel={() => setView('list')} deviceSerial={selectedCamera} />
+  );
   if (view === 'detail' && selected) return (
     <CounterDetail set={selected} onBack={() => setView('list')} onChanged={handleChanged} onDelete={handleDeleted} readOnly={viewer} />
   );
@@ -1195,7 +1210,8 @@ export default function Counters() {
   return (
     <div className="counters-wrapper">
       <CounterList
-        sets={sets}
+        sets={visibleSets}
+        showCamera={!selectedCamera}
         loading={loading}
         onRefresh={loadList}
         onCreate={() => setView('create')}

@@ -10,7 +10,9 @@ dist
 logs
 coverage
 secrets
-*.log# Dependencies
+*.log
+
+# Dependencies
 node_modules
 admin-ui/node_modules
 
@@ -40,8 +42,7 @@ Dockerfile
 docker-compose*.yml
 .dockerignore
 
-# Scripts
-scripts/
+# Scripts (scripts/ ships in the image for the init command)
 setup.sh
 start.sh
 

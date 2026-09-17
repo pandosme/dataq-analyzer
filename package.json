@@ -11,6 +11,7 @@
     "dev:db": "docker compose -f docker-compose.yml -f docker-compose.mongodb.yml -f docker-compose.dev.yml up -d mongodb",
     "start": "node src/server.js",
     "configure": "./setup.sh",
+    "init": "node scripts/init.js",
     "setup": "npm ci && npm --prefix web ci",
     "build": "npm --prefix web run build",
     "config:check": "node -e \"import('./src/config/index.js').then(() => console.log('Configuration is valid'))\"",
