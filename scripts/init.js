@@ -67,7 +67,8 @@ const appService = `services:
       MQTT_BROKER_URL: \${MQTT_BROKER_URL:-}
       MQTT_USERNAME: \${MQTT_USERNAME:-}
       MQTT_PASSWORD: \${MQTT_PASSWORD:-}
-      VIDEOX_API_KEY: \${VIDEOX_API_KEY:-}
+      MEDIAMTX_USERNAME: \${MEDIAMTX_USERNAME:-}
+      MEDIAMTX_PASSWORD: \${MEDIAMTX_PASSWORD:-}
       JWT_SECRET: \${JWT_SECRET:?Set JWT_SECRET in .env}
       JWT_EXPIRES_IN: \${JWT_EXPIRES_IN:-7d}
       CREDENTIAL_ENCRYPTION_KEY: \${CREDENTIAL_ENCRYPTION_KEY:?Set CREDENTIAL_ENCRYPTION_KEY in .env}
@@ -136,8 +137,10 @@ CREDENTIAL_ENCRYPTION_KEY=${secret()}
 BOOTSTRAP_ADMIN_USERNAME=${adminUsername}
 BOOTSTRAP_ADMIN_PASSWORD=${adminPassword}
 
-# Required only when playback is enabled in config.yaml.
-VIDEOX_API_KEY=
+# Required only when playback is enabled in config.yaml. These credentials are
+# sent only from the analyzer to MediaMTX; they are never exposed to browsers.
+MEDIAMTX_USERNAME=
+MEDIAMTX_PASSWORD=
 `;
 
 function writeFileSafely(name, contents, mode = 0o644) {

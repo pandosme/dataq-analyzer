@@ -45,7 +45,7 @@ router.get('/health', async (req, res) => {
         enabled: config.playback?.enabled || false,
         type: config.playback?.type || 'None',
         serverUrl: config.playback?.serverUrl || null,
-        configured: !!(config.playback?.enabled && config.playback?.serverUrl && config.playback?.apiKey),
+        configured: !!(config.playback?.enabled && config.playback?.serverUrl && config.playback?.username && config.playback?.password),
       },
     });
   } catch (error) {

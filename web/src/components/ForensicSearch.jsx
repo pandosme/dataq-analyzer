@@ -55,8 +55,7 @@ function ForensicSearch({ pathData, backgroundImage, selectedCamera, onQuery, lo
     anomalyOnly: false,
   });
 
-  // Note: Video playback is now handled via WebSocket
-  // Backend handles recording server connection (VideoX, Milestone, etc.)
+  // Playback is handled through the authenticated application WebSocket.
 
   // Compute image aspect ratio for container-fit sizing
   const imageAspect = useMemo(() => {

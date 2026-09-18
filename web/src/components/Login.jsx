@@ -57,14 +57,14 @@ function Login({ appName }) {
   };
 
   return (
-    <div className="login-container-videox">
-      <div className="login-card-videox">
-        <div className="login-header-videox">
+    <div className="login-container-dataq">
+      <div className="login-card-dataq">
+        <div className="login-header-dataq">
           <h1>{appName}</h1>
           <p>Path and Flow Analysis System</p>
         </div>
 
-        {error && <div className="error-message-videox">{error}</div>}
+        {error && <div className="error-message-dataq">{error}</div>}
 
         <form onSubmit={handleSubmit}>
           <div className="credentials-section">

@@ -54,7 +54,7 @@ export async function handleVideoMessage(ws, data, connectionId) {
  */
 async function handleRequestVideo(ws, message, connectionId) {
   try {
-    const { serial, timestamp, preTime, postTime, age, format = 'mp4', apiKey } = message;
+    const { serial, timestamp, preTime, postTime, age, format = 'mp4' } = message;
 
     // Validate required fields
     if (!serial || !timestamp) {
@@ -74,18 +74,13 @@ async function handleRequestVideo(ws, message, connectionId) {
       postTime,
       age,
       format,
-      hasApiKeyOverride: !!apiKey,
       connectionId,
     });
 
-    // Get video clip from recording server
-    // apiKey override: frontend may supply a key (e.g. from .env during dev)
-    // before the system config has been persisted to the DB.
     const { metadata, stream } = await getVideoClip(serial, new Date(timestamp), {
       preTime,
       postTime,
       age,
-      apiKey,
     });
 
     // Store stream reference for cleanup

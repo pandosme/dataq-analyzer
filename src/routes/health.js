@@ -19,7 +19,7 @@ router.get('/', async (req, res) => {
         playback: {
           enabled: config.playback?.enabled || false,
           type: config.playback?.type || 'None',
-          configured: !!(config.playback?.serverUrl && config.playback?.apiKey),
+          configured: !!(config.playback?.serverUrl && config.playback?.username && config.playback?.password),
         },
       },
     });

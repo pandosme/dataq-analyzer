@@ -7,7 +7,7 @@ import './WebSocketVideoPlayer.css';
  * WebSocket Video Player
  *
  * Streams video from the backend via WebSocket.
- * The backend proxies video from the recording server (VideoX, Milestone, etc.)
+ * The backend proxies video from the configured media server.
  * so the frontend doesn't need direct access to the recording server.
  *
  * Video timing:
@@ -308,9 +308,6 @@ function WebSocketVideoPlayer({ serial, timestamp, preTime, postTime, age, onErr
 
         // Pass API key to backend so it can authenticate with the recording server.
         // Sourced from VITE_API_KEY env var (temporary until backend serves it via system config).
-        const envApiKey = import.meta.env.VITE_API_KEY;
-        if (envApiKey) request.apiKey = envApiKey;
-
         if (import.meta.env.DEV) {
           console.log('WebSocketVideoPlayer: Requesting video with timing:', {
             timestamp,

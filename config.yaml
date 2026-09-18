@@ -21,9 +21,9 @@ mqtt:
   rejectUnauthorized: true
 
 playback:
-  enabled: false
-  type: VideoX
-  serverUrl: ""
+  enabled: true
+  type: MediaMTX
+  serverUrl: "http://dart.internal:9996"
   preTime: 5
   postTime: 5
 

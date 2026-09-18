@@ -74,14 +74,18 @@ const systemConfigSchema = new mongoose.Schema(
       },
       type: {
         type: String,
-        enum: ['VideoX', 'ACS', 'Milestone'],
-        default: 'VideoX',
+        enum: ['MediaMTX'],
+        default: 'MediaMTX',
       },
       serverUrl: {
         type: String,
         default: 'http://localhost:3002',
       },
-      apiKey: {
+      username: {
+        type: String,
+        default: '',
+      },
+      password: {
         type: String,
         default: '',
       },

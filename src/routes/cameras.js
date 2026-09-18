@@ -57,6 +57,7 @@ router.post('/', ...editorGuard, async (req, res) => {
   try {
     const {
       name,
+      recordingName,
       serialNumber,
       description,
       location,
@@ -85,6 +86,7 @@ router.post('/', ...editorGuard, async (req, res) => {
 
     const cameraData = {
       name,
+      recordingName,
       serialNumber,
       description,
       location,
@@ -153,6 +155,7 @@ router.put('/:id', ...editorGuard, requireDeviceOwner, async (req, res) => {
   try {
     const allowedFields = [
       'name',
+      'recordingName',
       'description',
       'location',
       'cameraType',

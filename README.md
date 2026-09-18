@@ -191,13 +191,51 @@ per-device defaults. Mounted read-only into the container.
 | `MQTT_BROKER_URL` | Required when `mqtt.enabled: true`, otherwise startup fails |
 | `CORS_ORIGIN` | The browser-facing origin |
 | `BOOTSTRAP_ADMIN_*` | First-administrator recovery only; see above |
-| `VIDEOX_API_KEY` | Only when playback is enabled |
+| `MEDIAMTX_USERNAME` | Required when MediaMTX playback is enabled |
+| `MEDIAMTX_PASSWORD` | Required when MediaMTX playback is enabled; never exposed to browsers |
 
 Validate before starting:
 
 ```bash
 npm run config:check
 ```
+
+### MediaMTX Playback
+
+Forensic playback uses [MediaMTX](https://mediamtx.org/) recordings through the
+analyzer's authenticated WebSocket; the browser never contacts MediaMTX or sees
+its credentials. On the MediaMTX host, enable the playback server and configure
+an internal-auth user permitted to read playback:
+
+```yaml
+playback: true
+playbackAddress: :9996
+authMethod: internal
+authInternalUsers:
+  - user: <analyzer-username>
+    pass: <analyzer-password>
+    permissions:
+      - action: playback
+```
+
+Configure the same username and password in `.env`, then configure
+`config.yaml` with the playback URL, for example:
+
+```yaml
+playback:
+  enabled: true
+  type: MediaMTX
+  serverUrl: "http://dart.internal:9996"
+  preTime: 5
+  postTime: 5
+```
+
+By default, each DataQ device name is lowercased to find its MediaMTX recording
+path, so `Front` maps to `front`. Set a camera's optional `recordingName` when
+it needs a different mapping. Restart DataQ Analyzer after changing either
+configuration file.
+
+MediaMTX playback is requested as `/get?path=<recording>&start=<UTC timestamp>&duration=<seconds>&format=mp4` by the backend.
 
 ### Retention
 

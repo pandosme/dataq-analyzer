@@ -7,6 +7,12 @@ const cameraSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    // Optional MediaMTX recording path. When empty, the lowercase camera name is used.
+    recordingName: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     // Device serial number - primary unique identifier (e.g., B8A44FF11A35)
     // This matches the serial from DataQ MQTT messages
     serialNumber: {

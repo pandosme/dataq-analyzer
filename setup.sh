@@ -194,7 +194,8 @@ existing_encryption_key=$(existing_env_value CREDENTIAL_ENCRYPTION_KEY)
 existing_mqtt_url=$(existing_env_value MQTT_BROKER_URL)
 existing_mqtt_username=$(existing_env_value MQTT_USERNAME)
 existing_mqtt_password=$(existing_env_value MQTT_PASSWORD)
-existing_videox_key=$(existing_env_value VIDEOX_API_KEY)
+existing_mediamtx_username=$(existing_env_value MEDIAMTX_USERNAME)
+existing_mediamtx_password=$(existing_env_value MEDIAMTX_PASSWORD)
 
 prompt_text app_name "Application name" "DataQ Analyzer" true
 prompt_number dataq_port "Host HTTP port" "${existing_port:-3303}" 1 65535
@@ -255,21 +256,14 @@ if [[ "$mqtt_enabled" == true ]]; then
 fi
 
 prompt_yes_no playback_enabled "Enable recording playback?" false
-playback_type='VideoX'
+playback_type='MediaMTX'
 playback_url=''
-videox_api_key=''
+mediamtx_username=''
+mediamtx_password=''
 if [[ "$playback_enabled" == true ]]; then
-  while true; do
-    prompt_text playback_type "Playback type (VideoX, ACS, or Milestone)" "VideoX" true
-    case "$playback_type" in
-      VideoX|ACS|Milestone) break ;;
-      *) echo "Choose VideoX, ACS, or Milestone." ;;
-    esac
-  done
-  prompt_text playback_url "Playback server URL" "http://localhost:3002" true
-  if [[ "$playback_type" == VideoX ]]; then
-    prompt_secret videox_api_key "VideoX API key" "$existing_videox_key" 1 false
-  fi
+  prompt_text playback_url "MediaMTX playback server URL" "http://localhost:9996" true
+  prompt_text mediamtx_username "MediaMTX playback username" "$existing_mediamtx_username" true
+  prompt_secret mediamtx_password "MediaMTX playback password" "$existing_mediamtx_password" 1 false
 fi
 
 prompt_number retention_days "Default data retention in days" 90 1 36500
@@ -324,7 +318,8 @@ CREDENTIAL_ENCRYPTION_KEY=$(dotenv_quote "$credential_encryption_key")
 BOOTSTRAP_ADMIN_USERNAME=$(dotenv_quote "$bootstrap_admin_username")
 BOOTSTRAP_ADMIN_PASSWORD=$(dotenv_quote "$bootstrap_admin_password")
 
-VIDEOX_API_KEY=$(dotenv_quote "$videox_api_key")
+MEDIAMTX_USERNAME=$(dotenv_quote "$mediamtx_username")
+MEDIAMTX_PASSWORD=$(dotenv_quote "$mediamtx_password")
 EOF
 
 cat >"$config_temp" <<EOF

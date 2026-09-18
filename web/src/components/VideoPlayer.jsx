@@ -68,7 +68,7 @@ function VideoPlayer({ videoInfo, onClose }) {
 
   const handleError = (e) => {
     console.error('Video playback error:', e);
-    setError('Failed to load video. Check VideoX connection and ensure recording exists for this time range.');
+    setError('Failed to load video. Check the media server connection and recording availability for this time range.');
   };
 
   if (!videoInfo) {

@@ -33,9 +33,9 @@ router.get('/', async (req, res) => {
         dateFormat: systemConfig.dateFormat || 'US',
         playbackConfig: {
           enabled: systemConfig.playback?.enabled || false,
-          type: systemConfig.playback?.type || 'VideoX',
+          type: systemConfig.playback?.type || 'MediaMTX',
           serverUrl: systemConfig.playback?.serverUrl || '',
-          hasApiKey: !!systemConfig.playback?.apiKey,
+          hasCredentials: !!(systemConfig.playback?.username && systemConfig.playback?.password),
           preTime: systemConfig.playback?.preTime || 5,
           postTime: systemConfig.playback?.postTime || 5,
         },
@@ -70,13 +70,14 @@ router.put('/', ...adminGuard, async (req, res) => {
 
     if (playbackConfig !== undefined) {
       // The UI uses type="None" to mean disabled; map it to a valid enum value.
-      const playbackType = playbackConfig.type === 'None' ? 'VideoX' : playbackConfig.type;
+      const playbackType = playbackConfig.type === 'None' ? 'MediaMTX' : playbackConfig.type;
       const playbackEnabled = playbackConfig.type === 'None' ? false : playbackConfig.enabled;
       updates.playback = {
         enabled: playbackEnabled,
         type: playbackType,
         serverUrl: playbackConfig.serverUrl,
-        apiKey: playbackConfig.apiKey,
+        username: playbackConfig.username,
+        password: playbackConfig.password,
         preTime: playbackConfig.preTime,
         postTime: playbackConfig.postTime,
       };
@@ -90,9 +91,9 @@ router.put('/', ...adminGuard, async (req, res) => {
         dateFormat: config.dateFormat,
         playbackConfig: {
           enabled: config.playback?.enabled || false,
-          type: config.playback?.type || 'VideoX',
+          type: config.playback?.type || 'MediaMTX',
           serverUrl: config.playback?.serverUrl || '',
-          hasApiKey: !!config.playback?.apiKey,
+          hasCredentials: !!(config.playback?.username && config.playback?.password),
           preTime: config.playback?.preTime || 5,
           postTime: config.playback?.postTime || 5,
         },
@@ -225,8 +226,9 @@ router.get('/system', async (req, res) => {
         ...config,
         playback: {
           ...config.playback,
-          apiKey: undefined,
-          hasApiKey: !!config.playback?.apiKey,
+          username: undefined,
+          password: undefined,
+          hasCredentials: !!(config.playback?.username && config.playback?.password),
         },
       },
     });
@@ -250,7 +252,7 @@ router.put('/system', ...adminGuard, async (req, res) => {
       body.playback = {
         ...body.playback,
         enabled: false,
-        type: 'VideoX', // keep a valid enum value as the stored type
+        type: 'MediaMTX', // keep a valid enum value as the stored type
       };
     }
 
@@ -325,43 +327,6 @@ router.post('/mongodb/test-config', ...adminGuard, async (req, res) => {
   } catch (error) {
     logger.error('Error testing MongoDB config', { error: error.message });
     res.status(500).json({ success: false, error: 'Failed to test MongoDB configuration' });
-  }
-});
-
-/**
- * POST /api/config/playback/test
- * Test Playback/VMS server connection
- */
-router.post('/playback/test', ...adminGuard, async (req, res) => {
-  try {
-    const { type, serverUrl, apiKey, useTls } = req.body;
-
-    if (!type) {
-      return res.status(400).json({
-        success: false,
-        error: 'Playback type is required',
-      });
-    }
-
-    if (!serverUrl) {
-      return res.status(400).json({
-        success: false,
-        error: 'Server URL is required',
-      });
-    }
-
-    if (!apiKey) {
-      return res.status(400).json({
-        success: false,
-        error: 'API Key is required',
-      });
-    }
-
-    const result = await configService.testPlaybackConnection({ type, serverUrl, apiKey, useTls });
-    res.json(result);
-  } catch (error) {
-    logger.error('Error testing playback connection', { error: error.message });
-    res.status(500).json({ success: false, error: 'Failed to test playback connection' });
   }
 });
 

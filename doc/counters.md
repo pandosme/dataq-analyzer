@@ -218,9 +218,9 @@ Get system configuration including date format and playback settings.
     "dateFormat": "US",
     "playbackConfig": {
       "enabled": true,
-      "type": "VideoX",
-      "serverUrl": "http://localhost:3002",
-      "apiKey": "your-api-key",
+      "type": "MediaMTX",
+      "serverUrl": "http://dart.internal:9996",
+      "hasCredentials": true,
       "preTime": 5,
       "postTime": 5
     },
@@ -247,9 +247,8 @@ Update system configuration.
   "dateFormat": "ISO",
   "playbackConfig": {
     "enabled": true,
-    "type": "VideoX",
-    "serverUrl": "http://videox-server:3002",
-    "apiKey": "new-api-key",
+    "type": "MediaMTX",
+    "serverUrl": "http://dart.internal:9996",
     "preTime": 10,
     "postTime": 10
   }
@@ -264,9 +263,9 @@ Update system configuration.
     "dateFormat": "ISO",
     "playbackConfig": {
       "enabled": true,
-      "type": "VideoX",
-      "serverUrl": "http://videox-server:3002",
-      "apiKey": "new-api-key",
+      "type": "MediaMTX",
+      "serverUrl": "http://dart.internal:9996",
+      "hasCredentials": true,
       "preTime": 10,
       "postTime": 10
     }
@@ -276,7 +275,7 @@ Update system configuration.
 
 **Notes:**
 - `dateFormat`: "US", "ISO", or "EU" (changes date display format)
-- `playbackConfig.type`: "VideoX", "ACS", or "Milestone" (VMS type)
+- `playbackConfig.type`: "MediaMTX" (recording server type)
 - `playbackConfig.preTime`: Seconds of video before event
 - `playbackConfig.postTime`: Seconds of video after event
 

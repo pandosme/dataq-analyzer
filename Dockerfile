@@ -18,9 +18,6 @@ RUN npm run build
 # ============================================
 FROM node:20-alpine
 
-# Install ffmpeg for video playback processing
-RUN apk add --no-cache ffmpeg
-
 WORKDIR /app
 
 # Copy package files and install production dependencies

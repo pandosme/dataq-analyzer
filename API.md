@@ -226,9 +226,9 @@ Get system configuration including date format and playback settings.
     "dateFormat": "US",
     "playbackConfig": {
       "enabled": true,
-      "type": "VideoX",
-      "serverUrl": "http://localhost:3002",
-      "apiKey": "your-api-key",
+      "type": "MediaMTX",
+      "serverUrl": "http://dart.internal:9996",
+      "hasCredentials": true,
       "preTime": 5,
       "postTime": 5
     },
@@ -255,9 +255,8 @@ Update system configuration.
   "dateFormat": "ISO",
   "playbackConfig": {
     "enabled": true,
-    "type": "VideoX",
-    "serverUrl": "http://videox-server:3002",
-    "apiKey": "new-api-key",
+    "type": "MediaMTX",
+    "serverUrl": "http://dart.internal:9996",
     "preTime": 10,
     "postTime": 10
   }
@@ -272,9 +271,9 @@ Update system configuration.
     "dateFormat": "ISO",
     "playbackConfig": {
       "enabled": true,
-      "type": "VideoX",
-      "serverUrl": "http://videox-server:3002",
-      "apiKey": "new-api-key",
+      "type": "MediaMTX",
+      "serverUrl": "http://dart.internal:9996",
+      "hasCredentials": true,
       "preTime": 10,
       "postTime": 10
     }
@@ -284,7 +283,7 @@ Update system configuration.
 
 **Notes:**
 - `dateFormat`: "US", "ISO", or "EU" (changes date display format)
-- `playbackConfig.type`: "VideoX", "ACS", or "Milestone" (VMS type)
+- `playbackConfig.type`: "MediaMTX" (recording server type)
 - `playbackConfig.preTime`: Seconds of video before event
 - `playbackConfig.postTime`: Seconds of video after event
 
@@ -1248,7 +1247,7 @@ wscat -c "ws://localhost:3000/ws/paths?token=$TOKEN"
 
 ## WebSocket Video Streaming API
 
-The video WebSocket endpoint provides on-demand retrieval of recorded video clips from recording servers (VideoX, Milestone, ACS).
+The video WebSocket endpoint provides on-demand retrieval of recorded clips from MediaMTX.
 
 ### Video WebSocket Endpoint
 
@@ -1306,7 +1305,7 @@ Request a video clip from a specific camera at a specific timestamp.
 
 **Notes:**
 - If `preTime` and `postTime` are not provided, backend uses values from system configuration
-- Client does not need to know which recording server is used (VideoX, Milestone, ACS)
+- Client applications never receive MediaMTX credentials or contact the media server directly
 - Backend automatically queries the configured recording server
 - **Playback Offset:** The frontend player automatically sets the initial playback position to `preTime` seconds into the clip. This means the video starts playing at the moment the event occurred, not at the beginning of the clip. Users can scrub backward to see the pre-event footage.
 
@@ -1415,7 +1414,7 @@ Error message during video streaming.
 
 **Error Codes:**
 - `VIDEO_NOT_FOUND`: No recording available for the requested time period
-- `RECORDING_SERVER_ERROR`: Recording server (VideoX/Milestone/ACS) is unavailable
+- `RECORDING_SERVER_ERROR`: MediaMTX recording server is unavailable
 - `CAMERA_NOT_FOUND`: Camera serial number not found in system
 - `PLAYBACK_DISABLED`: Video playback is disabled in system configuration
 - `INVALID_REQUEST`: Missing or invalid required fields
@@ -1431,7 +1430,7 @@ Error message during video streaming.
 
 2. **Request Video**
    - Client sends `request_video` message with camera serial and timestamp
-   - Backend queries configured recording server (VideoX/Milestone/ACS)
+  - Backend queries the configured MediaMTX recording server
    - Server sends `video_metadata` message
 
 3. **Receive Video**
@@ -1598,9 +1597,9 @@ Video playback must be configured in the system settings before use.
 
 **Configuration Fields:**
 - `playback.enabled` (boolean): Enable/disable video playback feature
-- `playback.type` (string): Recording server type ("VideoX", "Milestone", "ACS")
+- `playback.type` (string): Recording server type ("MediaMTX")
 - `playback.serverUrl` (string): Recording server URL
-- `playback.apiKey` (string): API key/credentials for recording server
+- `MEDIAMTX_USERNAME` / `MEDIAMTX_PASSWORD`: Server-side MediaMTX credentials
 - `playback.preTime` (number): Default seconds before event timestamp (0-60)
 - `playback.postTime` (number): Default seconds after event timestamp (0-60)
 
@@ -1609,9 +1608,8 @@ Video playback must be configured in the system settings before use.
 {
   "playback": {
     "enabled": true,
-    "type": "VideoX",
-    "serverUrl": "https://videox.example.com",
-    "apiKey": "secret-api-key",
+    "type": "MediaMTX",
+    "serverUrl": "http://dart.internal:9996",
     "preTime": 5,
     "postTime": 10
   }
@@ -1623,11 +1621,9 @@ Video playback must be configured in the system settings before use.
 ### Video Performance Considerations
 
 1. **Video Processing Pipeline:**
-   - Backend buffers complete video from recording server into memory
-   - Video is written to a temporary file (`/tmp/videox-{timestamp}-{random}.mp4`)
-   - ffmpeg fragments the MP4 (requires file access to seek to moov atom at end)
-   - Fragmented chunks are streamed to frontend via WebSocket
-   - Temporary file is automatically deleted after processing
+  - MediaMTX returns a time-bounded MP4 recording stream
+  - Backend proxies the stream directly to the authenticated WebSocket client
+  - No temporary files, buffering, or transcoding are required
 
 2. **Chunked Streaming**: Videos are streamed in chunks to avoid memory issues on client
 

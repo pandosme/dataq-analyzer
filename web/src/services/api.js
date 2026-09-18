@@ -303,63 +303,6 @@ export const configAPI = {
   },
 };
 
-// Playback API
-export const playbackAPI = {
-  // Get video URL for a path event
-  getVideoUrl: (playbackConfig, pathEvent) => {
-    if (!playbackConfig || !playbackConfig.enabled || !playbackConfig.serverUrl || !playbackConfig.apiKey) {
-      return null;
-    }
-
-    if (!pathEvent || !pathEvent.serialNumber || !pathEvent.timestamp || !pathEvent.age) {
-      return null;
-    }
-
-    const { type, serverUrl, apiKey, preTime, postTime } = playbackConfig;
-
-    // Currently only VideoX is implemented
-    if (type === 'VideoX') {
-      const eventDate = new Date(pathEvent.timestamp);
-      const startTime = Math.floor(eventDate.getTime() / 1000) - (preTime || 5);
-      const duration = Math.ceil(pathEvent.age) + (preTime || 5) + (postTime || 5);
-
-      // Note: API key must be included in URL since <video> element cannot send Authorization headers
-      // The VideoX server must support token authentication via query parameter or URL-based auth
-      const url = `${serverUrl}/api/recordings/export-clip?cameraId=${pathEvent.serialNumber}&startTime=${startTime}&duration=${duration}&token=${apiKey}`;
-
-      return {
-        url,
-        startTime,
-        duration,
-        apiKey,
-        type,
-      };
-    } else if (type === 'ACS') {
-      // ACS implementation to be added later
-      return null;
-    } else if (type === 'Milestone') {
-      // Milestone implementation to be added later
-      return null;
-    }
-
-    return null;
-  },
-
-  // Get download URL for a path event
-  getDownloadUrl: (playbackConfig, pathEvent) => {
-    const videoInfo = playbackAPI.getVideoUrl(playbackConfig, pathEvent);
-    if (!videoInfo) return null;
-
-    // Currently only VideoX supports downloads
-    // The export-clip endpoint can be used for both streaming and downloading
-    if (playbackConfig.type === 'VideoX') {
-      return videoInfo.url;
-    }
-
-    return null;
-  },
-};
-
 // Counter Sets API
 // Transforms backend field names (total/byClass/mqttTopic/mqttInterval)
 // to frontend field names (value/classes/mqtt.topic/mqtt.intervalSeconds)
