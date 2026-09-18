@@ -3,6 +3,11 @@
  */
 
 import axios from 'axios';
+import { spawn } from 'child_process';
+import { readFile, unlink, writeFile } from 'fs/promises';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import { Readable } from 'stream';
 import logger from '../utils/logger.js';
 import { getSystemConfig } from './configService.js';
 import { getCameraBySerialNumber } from './cameraService.js';
@@ -70,7 +75,10 @@ export async function getVideoClip(serialNumber, timestamp, options = {}) {
       serverType: config.playback.type,
     });
 
-    // Route to appropriate recording server
+    if (config.playback.type === 'VideoX') {
+      return await getVideoFromVideoX(camera, startTime, endTime, config.playback);
+    }
+
     return await getVideoFromMediaMtx(camera, startTime, endTime, config.playback);
   } catch (error) {
     logger.error('Failed to get video clip', {
@@ -78,6 +86,81 @@ export async function getVideoClip(serialNumber, timestamp, options = {}) {
       serialNumber,
       timestamp,
     });
+    throw error;
+  }
+}
+
+async function getVideoFromVideoX(camera, startTime, endTime, playbackConfig) {
+  try {
+    const duration = Math.floor((endTime - startTime) / 1000);
+    const startTimeEpoch = Math.floor(startTime.getTime() / 1000);
+    const baseUrl = playbackConfig.serverUrl.replace(/\/+$/, '');
+    const url = `${baseUrl}/api/recordings/export-clip`;
+    const response = await axios({
+      method: 'GET',
+      url,
+      headers: { Authorization: `Bearer ${playbackConfig.apiKey}` },
+      params: {
+        cameraId: camera.serialNumber,
+        startTime: startTimeEpoch,
+        duration,
+        token: playbackConfig.apiKey,
+      },
+      responseType: 'stream',
+      timeout: 60000,
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+    });
+
+    const contentType = response.headers['content-type'] || '';
+    if (!contentType.startsWith('video/')) {
+      response.data.destroy();
+      throw new Error(`VideoX returned unexpected content-type: ${contentType}`);
+    }
+
+    const chunks = [];
+    for await (const chunk of response.data) chunks.push(chunk);
+    const inputFile = join(tmpdir(), `videox-${Date.now()}-${Math.random().toString(36).slice(2)}.mp4`);
+    const outputFile = join(tmpdir(), `videox-frag-${Date.now()}-${Math.random().toString(36).slice(2)}.mp4`);
+    await writeFile(inputFile, Buffer.concat(chunks));
+
+    await new Promise((resolve, reject) => {
+      const ffmpeg = spawn('ffmpeg', [
+        '-i', inputFile,
+        '-c', 'copy',
+        '-movflags', 'frag_keyframe+empty_moov+default_base_moof',
+        '-f', 'mp4',
+        '-y',
+        outputFile,
+      ]);
+      ffmpeg.on('error', reject);
+      ffmpeg.on('exit', (code) => code === 0 ? resolve() : reject(new Error(`ffmpeg exited with code ${code}`)));
+    });
+
+    const output = await readFile(outputFile);
+    await Promise.all([unlink(inputFile).catch(() => {}), unlink(outputFile).catch(() => {})]);
+    return {
+      metadata: {
+        duration,
+        width: 1920,
+        height: 1080,
+        fps: 25,
+        codec: 'h264',
+        mimeType: 'video/mp4; codecs="avc1.640029"',
+      },
+      stream: Readable.from(output),
+    };
+  } catch (error) {
+    logger.error('Failed to fetch video from VideoX', {
+      error: error.message,
+      serialNumber: camera.serialNumber,
+      status: error.response?.status,
+    });
+    if (error.response?.status === 404) throw new Error('VIDEO_NOT_FOUND');
+    if (error.response?.status >= 500) throw new Error('RECORDING_SERVER_ERROR');
+    if ([401, 403].includes(error.response?.status)) throw new Error('AUTHENTICATION_FAILED');
+    if (error.code === 'ECONNREFUSED') throw new Error('RECORDING_SERVER_UNREACHABLE');
+    if (error.code === 'ETIMEDOUT') throw new Error('REQUEST_TIMEOUT');
     throw error;
   }
 }

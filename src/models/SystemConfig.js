@@ -74,7 +74,7 @@ const systemConfigSchema = new mongoose.Schema(
       },
       type: {
         type: String,
-        enum: ['MediaMTX'],
+        enum: ['MediaMTX', 'VideoX'],
         default: 'MediaMTX',
       },
       serverUrl: {

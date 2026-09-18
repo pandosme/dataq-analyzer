@@ -18,6 +18,9 @@ RUN npm run build
 # ============================================
 FROM node:20-alpine
 
+# VideoX clips are fragmented with ffmpeg before streaming to browsers.
+RUN apk add --no-cache ffmpeg
+
 WORKDIR /app
 
 # Copy package files and install production dependencies

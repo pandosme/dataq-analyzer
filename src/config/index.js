@@ -39,6 +39,7 @@ const environmentSchema = z.object({
   // value that fails the length check and stops the container from starting.
   BOOTSTRAP_ADMIN_USERNAME: emptyAsUndefined(z.string().min(1).optional()),
   BOOTSTRAP_ADMIN_PASSWORD: emptyAsUndefined(z.string().min(12).optional()),
+  VIDEOX_API_KEY: z.string().default(''),
   MEDIAMTX_USERNAME: z.string().default(''),
   MEDIAMTX_PASSWORD: z.string().default(''),
 });
@@ -69,7 +70,7 @@ const fileConfigSchema = z.object({
   }).default({}),
   playback: z.object({
     enabled: z.boolean().default(false),
-    type: z.literal('MediaMTX').default('MediaMTX'),
+    type: z.enum(['MediaMTX', 'VideoX']).default('MediaMTX'),
     serverUrl: z.union([z.literal(''), z.string().url()]).default(''),
     preTime: z.number().nonnegative().default(5),
     postTime: z.number().nonnegative().default(5),
@@ -136,8 +137,12 @@ function loadFileConfig() {
   if (result.data.playback.enabled && !result.data.playback.serverUrl) {
     throw new Error('playback.serverUrl must be set when playback.enabled=true');
   }
-  if (result.data.playback.enabled && (!environment.MEDIAMTX_USERNAME || !environment.MEDIAMTX_PASSWORD)) {
+  if (result.data.playback.enabled && result.data.playback.type === 'MediaMTX'
+    && (!environment.MEDIAMTX_USERNAME || !environment.MEDIAMTX_PASSWORD)) {
     throw new Error('MEDIAMTX_USERNAME and MEDIAMTX_PASSWORD must be set when MediaMTX playback is enabled');
+  }
+  if (result.data.playback.enabled && result.data.playback.type === 'VideoX' && !environment.VIDEOX_API_KEY) {
+    throw new Error('VIDEOX_API_KEY must be set when VideoX playback is enabled');
   }
 
   return { configPath, value: result.data };
@@ -203,6 +208,7 @@ export const authConfig = {
 
 export const playbackConfig = {
   ...installationConfig.playback,
+  apiKey: environment.VIDEOX_API_KEY,
   username: environment.MEDIAMTX_USERNAME,
   password: environment.MEDIAMTX_PASSWORD,
 };
