@@ -17,7 +17,7 @@ import './WebSocketVideoPlayer.css';
  * - Duration: preTime + age + postTime
  */
 function WebSocketVideoPlayer({ serial, timestamp, preTime, postTime, age, onError, onClose, onVideoReady }) {
-  const { token, server } = useAuth();
+  const { token } = useAuth();
   const videoRef = useRef(null);
   const wsRef = useRef(null);
   const mediaSourceRef = useRef(null);
@@ -251,7 +251,7 @@ function WebSocketVideoPlayer({ serial, timestamp, preTime, postTime, age, onErr
   }, [metadata]);
 
   useEffect(() => {
-    if (!serial || !timestamp || !token || !server) {
+    if (!serial || !timestamp || !token) {
       setError('Missing required parameters');
       return;
     }
@@ -263,20 +263,13 @@ function WebSocketVideoPlayer({ serial, timestamp, preTime, postTime, age, onErr
     let ws = null;
 
     const connect = () => {
-      // Convert HTTP/HTTPS to WS/WSS
-      // Handle empty/relative URLs (for nginx proxy setup)
-      let wsUrl;
-      if (!server.url || server.url === '') {
-        const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-        wsUrl = `${wsProtocol}://${window.location.host}/ws/video?token=${token}`;
-      } else {
-        // Normalize URL to ensure it has a protocol before converting to WebSocket URL
-        let normalizedUrl = server.url;
-        if (!normalizedUrl.match(/^https?:\/\//i)) {
-          normalizedUrl = `http://${normalizedUrl}`;
-        }
-        wsUrl = normalizedUrl.replace(/^http/, 'ws') + `/ws/video?token=${token}`;
-      }
+      // Always same-origin: nginx proxies /ws in production and Vite proxies it
+      // in development. The removed branch read server.url from AuthContext,
+      // which stopped providing a server when multi-server support was dropped —
+      // leaving `server` undefined, so the guard above rejected every request
+      // and no video could ever play.
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+      const wsUrl = `${wsProtocol}://${window.location.host}/ws/video?token=${token}`;
 
       if (import.meta.env.DEV) {
         console.log('WebSocketVideoPlayer: Connecting to', wsUrl);
@@ -292,10 +285,17 @@ function WebSocketVideoPlayer({ serial, timestamp, preTime, postTime, age, onErr
         }
 
         // Request video stream
+        // preTime/postTime/age must travel with the request: the clip runs from
+        // timestamp - preTime to timestamp + age + postTime, so without `age`
+        // the server falls back to its default and every clip is the same
+        // length regardless of how long the object was actually in scene.
         const request = {
           type: 'request_video',
           serial,
           timestamp,
+          preTime,
+          postTime,
+          age,
           format: 'mp4'
         };
 
@@ -494,7 +494,7 @@ function WebSocketVideoPlayer({ serial, timestamp, preTime, postTime, age, onErr
       cleanup();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [serial, timestamp, preTime, postTime, age, token, server?.url]);
+  }, [serial, timestamp, preTime, postTime, age, token]);
 
   if (error) {
     return (

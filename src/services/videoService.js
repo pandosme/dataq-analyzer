@@ -61,7 +61,19 @@ export async function getVideoClip(serialNumber, timestamp, options = {}) {
     // - endTime = timestamp + age + postTime
     // - duration = preTime + age + postTime
     const startTime = new Date(new Date(timestamp).getTime() - preTime * 1000);
-    const endTime = new Date(new Date(timestamp).getTime() + (age + postTime) * 1000);
+
+    // Object age is unbounded — paths in the field run to 40 minutes — and the
+    // recording server rejects a window longer than its own export limit, which
+    // would turn a long path into a hard error instead of a clip. Clamping keeps
+    // the beginning of the event, which is the part worth watching, and keeps
+    // the response a size the browser can actually buffer.
+    const maxSeconds = Number(process.env.MAX_CLIP_SECONDS || 600);
+    const requestedSeconds = preTime + age + postTime;
+    const clampedSeconds = Math.min(requestedSeconds, maxSeconds);
+    if (clampedSeconds < requestedSeconds) {
+      logger.info('Clip duration clamped', { serialNumber, requestedSeconds, maxSeconds });
+    }
+    const endTime = new Date(startTime.getTime() + clampedSeconds * 1000);
 
     logger.info('Fetching video clip', {
       serialNumber,
