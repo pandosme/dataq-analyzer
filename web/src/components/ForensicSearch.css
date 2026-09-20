@@ -5,6 +5,12 @@
   height: 100%;
   padding: 10px;
   background: var(--surface-subtle);
+  /* .analysis-content is a flex row, so without flex:1 this grid shrink-wraps
+     its content: the 1fr column collapses to the image's intrinsic size and
+     everything past the results table is dead space. min-width:0 lets the
+     column actually shrink on narrow windows instead of overflowing. */
+  flex: 1;
+  min-width: 0;
 }
 
 /* Left Panel - Filters */
