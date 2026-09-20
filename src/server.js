@@ -136,11 +136,22 @@ async function startServer() {
       logger.warn('Failed to initialize counter sets', { error: err.message });
     }
 
-    // Schedule daily retention cleanup at midnight
-    try {
-      retentionService.scheduleDailyCleanup();
-    } catch (err) {
-      logger.warn('Failed to schedule retention cleanup', { error: err.message });
+    // Schedule daily retention cleanup at midnight.
+    //
+    // Opt out with RETENTION_ENABLED=false. Retention deletes path events
+    // unattended at midnight, and per-camera retentionDays overrides whatever
+    // the config file says — so a development instance pointed at a production
+    // database will happily destroy real history while nobody is watching.
+    // The flag is explicit rather than keyed on NODE_ENV, which is far too easy
+    // to end up with by accident in a deployed environment.
+    if (process.env.RETENTION_ENABLED === 'false') {
+      logger.info('Retention cleanup disabled by RETENTION_ENABLED=false');
+    } else {
+      try {
+        retentionService.scheduleDailyCleanup();
+      } catch (err) {
+        logger.warn('Failed to schedule retention cleanup', { error: err.message });
+      }
     }
 
     // Graceful shutdown handler

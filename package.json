@@ -8,6 +8,7 @@
     "dev": "concurrently --kill-others --names server,web --prefix-colors cyan,magenta \"npm run dev:server\" \"npm run dev:web\"",
     "dev:server": "NODE_ENV=development PORT=3303 CORS_ORIGIN=http://localhost:3403 MONGODB_URI=mongodb://localhost:${MONGODB_DEV_PORT:-27017}/dataq-analyzer nodemon src/server.js",
     "dev:web": "npm --prefix web run dev",
+    "dev:dart": "bash scripts/dev-dart.sh",
     "dev:db": "docker compose -f docker-compose.yml -f docker-compose.mongodb.yml -f docker-compose.dev.yml up -d mongodb",
     "start": "node src/server.js",
     "configure": "./setup.sh",

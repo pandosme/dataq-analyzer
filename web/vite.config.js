@@ -7,16 +7,18 @@ export default defineConfig({
   base: '/',
   server: {
     host: '0.0.0.0',
-    port: 3403,
+    // Overridable so the dev UI can be served on whichever port the developer
+    // browses to, with the API moved out of its way.
+    port: Number(process.env.DEV_WEB_PORT) || 3403,
     allowedHosts: ['.internal'],
     proxy: {
       // Proxy API and WebSocket requests to the dev backend (mirrors Docker/nginx behaviour)
       '/api': {
-        target: 'http://localhost:3303',
+        target: `http://localhost:${process.env.DEV_API_PORT || 3303}`,
         changeOrigin: true,
       },
       '/ws': {
-        target: 'ws://localhost:3303',
+        target: `ws://localhost:${process.env.DEV_API_PORT || 3303}`,
         ws: true,
         changeOrigin: true,
       },

@@ -17,6 +17,8 @@ lerna-debug.log*
 .env.*
 !.env.example
 config.yaml.backup.*
+# Local dev config; points at the production database and is machine-specific.
+config.dev.yaml
 secrets/
 
 # OS
