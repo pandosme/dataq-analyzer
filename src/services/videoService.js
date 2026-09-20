@@ -94,6 +94,14 @@ async function getVideoFromVideoX(camera, startTime, endTime, playbackConfig) {
   try {
     const duration = Math.floor((endTime - startTime) / 1000);
     const startTimeEpoch = Math.floor(startTime.getTime() / 1000);
+    // Camera Vault addresses cameras by slug or name, case-insensitively — it
+    // has no notion of a serial number. This is the same identifier the
+    // MediaMTX path already uses, so recordingName stays the one place to fix
+    // a camera whose name differs between the two systems.
+    const cameraId = camera.recordingName || String(camera.name || '').toLowerCase();
+    if (!cameraId) {
+      throw new Error(`Camera ${camera.serialNumber} has no name or recordingName to address it by`);
+    }
     const baseUrl = playbackConfig.serverUrl.replace(/\/+$/, '');
     const url = `${baseUrl}/api/recordings/export-clip`;
     const response = await axios({
@@ -101,7 +109,7 @@ async function getVideoFromVideoX(camera, startTime, endTime, playbackConfig) {
       url,
       headers: { Authorization: `Bearer ${playbackConfig.apiKey}` },
       params: {
-        cameraId: camera.serialNumber,
+        cameraId,
         startTime: startTimeEpoch,
         duration,
         token: playbackConfig.apiKey,

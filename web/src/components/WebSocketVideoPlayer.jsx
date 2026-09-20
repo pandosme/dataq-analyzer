@@ -25,6 +25,7 @@ function WebSocketVideoPlayer({ serial, timestamp, preTime, postTime, age, onErr
   const chunksRef = useRef([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [snapshot, setSnapshot] = useState(null);
   const [metadata, setMetadata] = useState(null);
 
   // Initialize MediaSource - moved outside useEffect to be accessible
@@ -402,6 +403,9 @@ function WebSocketVideoPlayer({ serial, timestamp, preTime, postTime, age, onErr
         case 'error':
           console.error('WebSocketVideoPlayer: Server error', message.message);
           setError(message.message || 'Video not available');
+          // Sent only for VIDEO_NOT_FOUND: the camera's last known view, shown
+          // instead of an empty error box when the moment was never recorded.
+          setSnapshot(message.snapshot || null);
           setLoading(false);
           if (onError) onError(message.message);
           break;
@@ -495,8 +499,21 @@ function WebSocketVideoPlayer({ serial, timestamp, preTime, postTime, age, onErr
   if (error) {
     return (
       <div className="ws-video-player error">
+        {snapshot && (
+          <img
+            className="video-snapshot"
+            src={`data:image/jpeg;base64,${snapshot.image}`}
+            alt={snapshot.cameraName ? `Senaste bilden från ${snapshot.cameraName}` : 'Senaste kamerabilden'}
+          />
+        )}
         <div className="error-message">
           <p>{error}</p>
+          {snapshot && (
+            <p className="snapshot-note">
+              Ingen inspelning för denna tidpunkt — visar senaste kamerabilden
+              {snapshot.timestamp ? ` (${new Date(snapshot.timestamp).toLocaleString('sv-SE')})` : ''}.
+            </p>
+          )}
           <button onClick={() => onClose && onClose()}>Close</button>
         </div>
       </div>
