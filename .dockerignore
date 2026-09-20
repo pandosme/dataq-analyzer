@@ -49,3 +49,7 @@ start.sh
 # Tests
 coverage
 .nyc_output
+
+# Local dev-only config and scratch files — must never ship in the image
+config.dev.yaml
+tmp/
