@@ -13,11 +13,17 @@ async function cleanupCamera(camera, defaultRetentionDays) {
 
     const nowMs = Date.now();
     const cutoffDate = new Date(nowMs - retentionDays * 24 * 60 * 60 * 1000);
-    const cutoffEpoch = Math.floor(cutoffDate.getTime() / 1000);
 
+    // PathEvent.timestamp is stored in MILLISECONDS. Comparing it against a
+    // seconds-scale cutoff (as this did) can never match — every stored value is
+    // ~1.7e12 and the cutoff ~1.7e9 — so the timestamp half of this $or was
+    // silently dead and only createdAt pruned anything. That is fine for events
+    // ingested live, where the two are seconds apart, but an event backfilled
+    // later carries a recent createdAt and an old timestamp, and was never
+    // eligible for deletion by either clause.
     const result = await PathEvent.deleteMany({
       serial: camera.serialNumber,
-      $or: [{ timestamp: { $lte: cutoffEpoch } }, { createdAt: { $lte: cutoffDate } }],
+      $or: [{ timestamp: { $lte: cutoffDate.getTime() } }, { createdAt: { $lte: cutoffDate } }],
     });
 
     logger.info('Retention cleanup for camera', {

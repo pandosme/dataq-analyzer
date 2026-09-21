@@ -102,6 +102,39 @@ export async function getVideoClip(serialNumber, timestamp, options = {}) {
   }
 }
 
+/**
+ * Re-fragment an MP4 so MediaSource can play it progressively. Only needed for a
+ * recording server that returns a plain MP4; Camera Vault does not. Buffers the
+ * whole clip by necessity — ffmpeg cannot seek a pipe to move the moov atom.
+ * @param {stream.Readable} source - Response stream from the recording server
+ * @returns {Promise<stream.Readable>} Fragmented MP4 stream
+ */
+async function remuxToFragmentedMp4(source) {
+  const chunks = [];
+  for await (const chunk of source) chunks.push(chunk);
+  const inputFile = join(tmpdir(), `videox-${Date.now()}-${Math.random().toString(36).slice(2)}.mp4`);
+  const outputFile = join(tmpdir(), `videox-frag-${Date.now()}-${Math.random().toString(36).slice(2)}.mp4`);
+  await writeFile(inputFile, Buffer.concat(chunks));
+
+  try {
+    await new Promise((resolve, reject) => {
+      const ffmpeg = spawn('ffmpeg', [
+        '-i', inputFile,
+        '-c', 'copy',
+        '-movflags', 'frag_keyframe+empty_moov+default_base_moof',
+        '-f', 'mp4',
+        '-y',
+        outputFile,
+      ]);
+      ffmpeg.on('error', reject);
+      ffmpeg.on('exit', (code) => (code === 0 ? resolve() : reject(new Error(`ffmpeg exited with code ${code}`))));
+    });
+    return Readable.from(await readFile(outputFile));
+  } finally {
+    await Promise.all([unlink(inputFile).catch(() => {}), unlink(outputFile).catch(() => {})]);
+  }
+}
+
 async function getVideoFromVideoX(camera, startTime, endTime, playbackConfig) {
   try {
     const duration = Math.floor((endTime - startTime) / 1000);
@@ -138,38 +171,30 @@ async function getVideoFromVideoX(camera, startTime, endTime, playbackConfig) {
       throw new Error(`VideoX returned unexpected content-type: ${contentType}`);
     }
 
-    const chunks = [];
-    for await (const chunk of response.data) chunks.push(chunk);
-    const inputFile = join(tmpdir(), `videox-${Date.now()}-${Math.random().toString(36).slice(2)}.mp4`);
-    const outputFile = join(tmpdir(), `videox-frag-${Date.now()}-${Math.random().toString(36).slice(2)}.mp4`);
-    await writeFile(inputFile, Buffer.concat(chunks));
-
-    await new Promise((resolve, reject) => {
-      const ffmpeg = spawn('ffmpeg', [
-        '-i', inputFile,
-        '-c', 'copy',
-        '-movflags', 'frag_keyframe+empty_moov+default_base_moof',
-        '-f', 'mp4',
-        '-y',
-        outputFile,
-      ]);
-      ffmpeg.on('error', reject);
-      ffmpeg.on('exit', (code) => code === 0 ? resolve() : reject(new Error(`ffmpeg exited with code ${code}`)));
-    });
-
-    const output = await readFile(outputFile);
-    await Promise.all([unlink(inputFile).catch(() => {}), unlink(outputFile).catch(() => {})]);
-    return {
-      metadata: {
-        duration,
-        width: 1920,
-        height: 1080,
-        fps: 25,
-        codec: 'h264',
-        mimeType: 'video/mp4; codecs="avc1.640029"',
-      },
-      stream: Readable.from(output),
+    const metadata = {
+      duration,
+      width: 1920,
+      height: 1080,
+      fps: 25,
+      codec: 'h264',
+      mimeType: 'video/mp4; codecs="avc1.640029"',
     };
+
+    // Camera Vault already answers with fragmented MP4 — it muxes with
+    // frag_keyframe+empty_moov+default_base_moof, which is exactly what
+    // MediaSource needs — so the response can go straight to the client.
+    // Re-fragmenting it here with the same flags cost a full copy of the clip in
+    // memory, a temp file, an ffmpeg process and a second read before the first
+    // frame could play; a 600s clip is ~50 MB through that path.
+    //
+    // Set VIDEOX_REMUX=true when pointing at a server that returns plain MP4,
+    // where the moov atom sits at the end of the file and MSE cannot start
+    // playback until the whole thing has arrived.
+    if (process.env.VIDEOX_REMUX === 'true') {
+      return { metadata, stream: await remuxToFragmentedMp4(response.data) };
+    }
+
+    return { metadata, stream: response.data };
   } catch (error) {
     logger.error('Failed to fetch video from VideoX', {
       error: error.message,
