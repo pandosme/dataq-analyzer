@@ -298,12 +298,12 @@ export async function updateCameraSnapshotFromMQTT(data) {
     const { serialNumber, base64Image, timestamp, rotation, aspectRatio, name, location } = data;
     const normalizedSerial = serialNumber.toUpperCase();
 
+    // A snapshot updates the camera's picture; it does not un-delete it. Setting
+    // enabled/archivedAt here un-archived any removed device that still posts
+    // images, the same way the announcement and status paths used to.
     const updateData = {
       latestSnapshot: base64Image,
       latestSnapshotTimestamp: new Date(timestamp),
-      enabled: true,
-      archivedAt: null,
-      archivedBy: null,
     };
 
     // Update rotation and aspect ratio if provided
@@ -321,6 +321,7 @@ export async function updateCameraSnapshotFromMQTT(data) {
     }
 
     const insertDefaults = {
+      enabled: true,
       cameraType: 'remote',
       mqttTopic: `dataq/path/${normalizedSerial}`,
       autoDiscovered: true,
