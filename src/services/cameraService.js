@@ -1,4 +1,4 @@
-import { Camera, OccupancyEvent, PathEvent } from '../models/index.js';
+import { Camera, OccupancyEvent, PathEvent, DismissedDevice } from '../models/index.js';
 import * as configService from './configService.js';
 import logger from '../utils/logger.js';
 import { getVisibleDeviceFilter } from '../middleware/auth.js';
@@ -138,6 +138,12 @@ export async function createCamera(cameraData) {
       password: encryptSecret(cameraData.password),
     });
     await camera.save();
+
+    // Adding a device back is a deliberate reversal of having removed it, so it
+    // stops being dismissed and may be auto-discovered again from here on.
+    await DismissedDevice.deleteOne({ serialNumber: camera.serialNumber })
+      .catch((error) => logger.warn('Failed to clear dismissal', { error: error.message }));
+
     logger.info('Camera created', { serialNumber: camera.serialNumber, name: camera.name });
     return toSafeCamera(camera.toObject());
   } catch (error) {
@@ -257,6 +263,15 @@ export async function purgeCameraWithData(id) {
   ]);
   await Camera.findByIdAndDelete(id);
 
+  // Remember the removal. Deleting the document alone is not enough: the broker
+  // replays retained connect announcements to every new subscriber, so without
+  // this the device is auto-discovered again on the next restart.
+  await DismissedDevice.findOneAndUpdate(
+    { serialNumber },
+    { $set: { name: camera.name || '' } },
+    { upsert: true }
+  ).catch((error) => logger.error('Failed to record dismissed device', { serialNumber, error: error.message }));
+
   const summary = {
     serialNumber,
     name: camera.name,
@@ -314,6 +329,9 @@ export async function updateCameraSnapshotFromMQTT(data) {
       insertDefaults.name = normalizedSerial;
     }
 
+    const dismissedSerial = await DismissedDevice.exists({ serialNumber: normalizedSerial });
+    if (dismissedSerial) return { camera: null, isNew: false, dismissed: true };
+
     const result = await Camera.findOneAndUpdate(
       { serialNumber: normalizedSerial },
       {
@@ -349,13 +367,16 @@ export async function upsertCameraFromStatus(status) {
   const serialNumber = (status.serial || '').toUpperCase();
   if (!serialNumber) throw new Error('serial is required in status');
 
+  if (await DismissedDevice.exists({ serialNumber })) {
+    return { camera: null, isNew: false, dismissed: true };
+  }
+
   const result = await Camera.findOneAndUpdate(
     { serialNumber },
     {
+      // A status report says the device is alive; it does not un-delete it.
+      // enabled/archivedAt here silently reversed an operator's archive.
       $set: {
-        enabled: true,
-        archivedAt: null,
-        archivedBy: null,
         'deviceStatus.connected': true,
         'deviceStatus.networkKbps': status.networkKbps || 0,
         'deviceStatus.cpuAverage': status.cpuAverage || 0,
@@ -364,6 +385,7 @@ export async function upsertCameraFromStatus(status) {
       },
       $setOnInsert: {
         name: serialNumber,
+        enabled: true,
         cameraType: 'remote',
         mqttTopic: `dataq/path/${serialNumber}`,
         autoDiscovered: true,
@@ -435,15 +457,17 @@ export async function upsertCameraFromAnnouncement(announcement) {
     const setOnInsert = {
       // Defaults only applied when the document is first created
       ...(!announcement.name ? { name: serialNumber } : {}),
+      enabled: true,
       cameraType: 'remote',
       mqttTopic: `dataq/path/${serialNumber}`,
       autoDiscovered: true,
     };
 
+    // An announcement reports liveness; it does not un-delete anything. Setting
+    // enabled/archivedAt here meant every retained connect message on the broker
+    // silently reversed an operator's archive, and archived devices reappeared
+    // in the list on each restart. `enabled` belongs on insert only.
     const setAlways = {
-      enabled: true,
-      archivedAt: null,
-      archivedBy: null,
       'deviceStatus.connected': announcement.connected !== false,
       'deviceStatus.lastSeen': new Date(),
     };
@@ -452,6 +476,15 @@ export async function upsertCameraFromAnnouncement(announcement) {
     if (announcement.model !== undefined) setAlways.model = announcement.model;
     if (announcement.address !== undefined) setAlways['deviceStatus.address'] = announcement.address;
     if (Array.isArray(announcement.labels)) setAlways.labels = labels;
+
+    // Brokers replay retained announcements to every new subscriber, so a device
+    // the operator permanently removed would otherwise be recreated on the next
+    // restart. Upsert only when it has not been dismissed.
+    const dismissed = await DismissedDevice.exists({ serialNumber });
+    if (dismissed) {
+      logger.debug('Ignoring announcement from a dismissed device', { serialNumber });
+      return { camera: null, isNew: false, dismissed: true };
+    }
 
     const result = await Camera.findOneAndUpdate(
       { serialNumber },

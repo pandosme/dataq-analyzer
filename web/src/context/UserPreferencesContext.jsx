@@ -54,6 +54,7 @@ export const UserPreferencesProvider = ({ children }) => {
     timeFormat: '12h',
     timezone: 'America/New_York',
     playback: {
+      enabled: false,
       preTime: 5,
       postTime: 10,
     },
@@ -80,6 +81,7 @@ export const UserPreferencesProvider = ({ children }) => {
             timeFormat: systemResponse.data.timeFormat || '12h',
             timezone: systemResponse.data.timezone || 'America/New_York',
             playback: {
+              enabled: systemResponse.data.playback?.enabled === true,
               preTime: systemResponse.data.playback?.preTime || 5,
               postTime: systemResponse.data.playback?.postTime || 10,
             },
@@ -158,6 +160,10 @@ export const UserPreferencesProvider = ({ children }) => {
   const timeFormat = userPreferences.timeFormat || systemConfig.timeFormat;
   const timezone = userPreferences.timezone || systemConfig.timezone;
   const theme = userPreferences.theme || 'light';
+  // Whether this installation has a recording server at all. Instances without
+  // one must not offer video: asking for a clip they cannot fetch replaces the
+  // camera view with an error box.
+  const playbackEnabled = systemConfig.playback.enabled === true;
   const videoPreTime = userPreferences.videoPlayback?.preTime ?? systemConfig.playback.preTime;
   const videoPostTime = userPreferences.videoPlayback?.postTime ?? systemConfig.playback.postTime;
 
@@ -169,6 +175,7 @@ export const UserPreferencesProvider = ({ children }) => {
         timeFormat,
         timezone,
         theme,
+        playbackEnabled,
         videoPreTime,
         videoPostTime,
 

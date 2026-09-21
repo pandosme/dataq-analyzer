@@ -5,7 +5,6 @@
 
 import logger from '../utils/logger.js';
 import { getVideoClip } from '../services/videoService.js';
-import { getCameraBySerialNumber } from '../services/cameraService.js';
 
 // Track active video streams per connection
 const activeStreams = new Map();
@@ -151,14 +150,7 @@ async function handleRequestVideo(ws, message, connectionId) {
       errorCode = 'PLAYBACK_DISABLED';
     }
 
-    // Only a genuinely missing recording gets the snapshot — a server error or
-    // a misconfiguration must stay visible as a fault, not be papered over with
-    // a still image that looks like a normal result.
-    const extra = errorCode === 'VIDEO_NOT_FOUND'
-      ? { snapshot: await snapshotFallback(message?.serial) }
-      : {};
-
-    sendError(ws, error.message, errorCode, extra);
+    sendError(ws, error.message, errorCode);
   }
 }
 
@@ -189,40 +181,15 @@ function handlePing(ws) {
  * @param {string} message - Error message
  * @param {string} code - Error code
  */
-function sendError(ws, message, code = 'ERROR', extra = {}) {
+function sendError(ws, message, code = 'ERROR') {
   if (ws.readyState === 1) {
     ws.send(
       JSON.stringify({
         type: 'error',
         message,
         code,
-        ...extra,
       })
     );
-  }
-}
-
-/**
- * Last known view of a camera, used when a moment has no recorded footage.
- * Retention having passed or the recorder having been down is normal, and the
- * stored snapshot gives the event visual context that an error box does not.
- * @param {string} serial - Camera serial number
- * @returns {Promise<Object|null>} Snapshot payload, or null when unavailable
- */
-async function snapshotFallback(serial) {
-  if (!serial) return null;
-  try {
-    const camera = await getCameraBySerialNumber(serial);
-    if (!camera || !camera.latestSnapshot) return null;
-    return {
-      image: camera.latestSnapshot,
-      timestamp: camera.latestSnapshotTimestamp || null,
-      cameraName: camera.name || '',
-    };
-  } catch (error) {
-    // The fallback must never replace the real error with one of its own.
-    logger.warn('Could not load snapshot fallback', { serial, error: error.message });
-    return null;
   }
 }
 

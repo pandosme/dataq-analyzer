@@ -43,6 +43,18 @@ export CORS_ORIGIN=http://localhost:3303
 # is the only setting that actually stops the midnight purge.
 export RETENTION_ENABLED=false
 
+# Refuse to start with MQTT ingest on. This instance shares dart's production
+# database, and PathEvent has no unique index, so a second subscriber writes a
+# duplicate of every event into live data. It has happened: an edit intended for
+# playback.enabled hit mqtt.enabled instead, and one minute of running produced
+# a duplicated event that had to be cleaned up by hand.
+if grep -qzoP 'mqtt:\s*\n\s*enabled:\s*true' config.dev.yaml; then
+  echo "error: config.dev.yaml has mqtt.enabled: true" >&2
+  echo "       This instance shares dart's production database — a second MQTT" >&2
+  echo "       subscriber duplicates every event into live data. Set it to false." >&2
+  exit 1
+fi
+
 echo "dataq-analyzer dev  ->  http://localhost:3303   (API on :3304, database: dart)"
 
 exec npx concurrently --kill-others --names server,web --prefix-colors cyan,magenta \

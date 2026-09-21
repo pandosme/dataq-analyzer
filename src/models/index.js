@@ -6,3 +6,4 @@ export { default as SystemConfig } from './SystemConfig.js';
 export { default as User } from './User.js';
 export { default as CounterSet } from './CounterSet.js';
 export { default as OccupancyEvent } from './OccupancyEvent.js';
+export { default as DismissedDevice } from './DismissedDevice.js';

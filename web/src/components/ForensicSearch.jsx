@@ -25,7 +25,7 @@ const COLOR_NAME_MAP = {
 };
 
 function ForensicSearch({ pathData, backgroundImage, selectedCamera, onQuery, loading, cameraDetails, queryOpen, onQueryClose }) {
-  const { dateFormat, timeFormat, videoPreTime, videoPostTime } = useUserPreferences();
+  const { dateFormat, timeFormat, playbackEnabled, videoPreTime, videoPostTime } = useUserPreferences();
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
   const videoRef = useRef(null);
@@ -689,7 +689,11 @@ function ForensicSearch({ pathData, backgroundImage, selectedCamera, onQuery, lo
 
     // If selecting a new path, request video via WebSocket
     // Use user's preferred pre/post time (which may override system defaults)
-    if (newSelectedPath && newSelectedPath.serial && newSelectedPath.timestamp) {
+    // With no recording server configured there is no clip to ask for, and the
+    // camera view is the better answer anyway: the canvas keeps the backdrop and
+    // draws the selected path on it. Requesting video regardless would swap that
+    // for an error box.
+    if (playbackEnabled && newSelectedPath && newSelectedPath.serial && newSelectedPath.timestamp) {
       // Calculate correct video timing:
       // IMPORTANT: timestamp = when the object FIRST APPEARED (entry time)
       // - timestamp: when object first appeared/was first detected
@@ -953,9 +957,14 @@ function ForensicSearch({ pathData, backgroundImage, selectedCamera, onQuery, lo
                 age={videoInfo.age}
                 onError={(error) => {
                   console.error('Video playback error:', error);
-                  setToastMessage(error || 'Failed to load video');
+                  // Drop back to the backdrop with the selected path drawn on
+                  // it, rather than leaving a black player and a warning where
+                  // the camera view should be.
+                  setVideoInfo(null);
+                  setVideoDimensions(null);
+                  setToastMessage(error || 'Ingen video för denna händelse');
                   setShowToast(true);
-                  setTimeout(() => setShowToast(false), 3000);
+                  setTimeout(() => setShowToast(false), 4000);
                 }}
                 onClose={() => {
                   setVideoInfo(null);
