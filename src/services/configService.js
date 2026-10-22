@@ -188,17 +188,28 @@ export async function reconnectMqtt() {
  * @returns {Promise<Object>}
  */
 export async function getSystemConfig() {
+  const retention = await SystemConfig.findById('system-config').select('retentionDefaultDays').lean();
   return {
     appName: appConfig.name,
     defaultPageSize: appConfig.defaultPageSize,
     maxPageSize: appConfig.maxPageSize,
     defaultTimeRangeHours: appConfig.defaultTimeRangeHours,
-    dataRetentionDays: appConfig.dataRetentionDays,
+    dataRetentionDays: retention?.retentionDefaultDays ?? appConfig.dataRetentionDays,
     dateFormat: installationConfig.display.dateFormat,
     pathVisualization: installationConfig.display.pathVisualization,
     playback: { ...playbackConfig },
     deviceDefaults: installationConfig.devices.defaults,
   };
+}
+
+export async function updateRetentionDefault(dataRetentionDays) {
+  await SystemConfig.findByIdAndUpdate(
+    'system-config',
+    { $set: { retentionDefaultDays: dataRetentionDays } },
+    { upsert: true, runValidators: true }
+  );
+  logger.info('Default retention updated', { dataRetentionDays });
+  return { dataRetentionDays };
 }
 
 /**

@@ -41,9 +41,9 @@ export const appInfoAPI = {
 
 // Cameras API
 export const camerasAPI = {
-  getAll: async (enabledOnly = false, includeStats = false) => {
+  getAll: async (enabledOnly = false, includeStats = false, includeArchived = false) => {
     const response = await getApi().get('/cameras', {
-      params: { enabled: enabledOnly, stats: includeStats },
+      params: { enabled: enabledOnly, stats: includeStats, archived: includeArchived },
     });
     return response.data;
   },
@@ -292,6 +292,16 @@ export const userPreferencesAPI = {
 
 // Configuration API
 export const configAPI = {
+  getRetention: async () => {
+    const response = await getApi().get('/config/retention');
+    return response.data;
+  },
+
+  updateRetention: async (dataRetentionDays) => {
+    const response = await getApi().put('/config/retention', { dataRetentionDays });
+    return response.data;
+  },
+
   getSystemConfig: async () => {
     const response = await getApi().get('/config/system');
     return response.data;

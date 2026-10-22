@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { useAuth } from '../context/AuthContext';
 import { useUserPreferences } from '../context/UserPreferencesContext';
 import AdminUsers from './AdminUsers';
+import RetentionSettings from './RetentionSettings';
 import './SettingsDialog.css';
 
 function SettingsDialog({ initialSection, onClose }) {
@@ -92,10 +93,12 @@ function SettingsDialog({ initialSection, onClose }) {
         <header className="settings-header">
           <div>
             <h2 id="settings-title">
-              {activeTab === 'administration' ? 'Administration' : 'My display'}
+              {activeTab === 'retention' ? 'Data retention' : activeTab === 'administration' ? 'Administration' : 'My display'}
             </h2>
             <span>
-              {activeTab === 'administration'
+              {activeTab === 'retention'
+                ? 'System default and per-camera retention'
+                : activeTab === 'administration'
                 ? 'Manage administrators and viewers'
                 : `Personal preferences for ${user?.username}`}
             </span>
@@ -122,10 +125,21 @@ function SettingsDialog({ initialSection, onClose }) {
               User administration
             </button>
           )}
+          {canManageUsers && (
+            <button
+              type="button"
+              className={activeTab === 'retention' ? 'active' : ''}
+              onClick={() => setActiveTab('retention')}
+            >
+              Data retention
+            </button>
+          )}
         </nav>
 
         <div className="settings-content">
-          {activeTab === 'administration' ? (
+          {activeTab === 'retention' && canManageUsers ? (
+            <RetentionSettings />
+          ) : activeTab === 'administration' ? (
             <AdminUsers />
           ) : (
             <div className="preferences-panel">

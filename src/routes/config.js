@@ -8,6 +8,39 @@ const router = express.Router();
 router.use(authenticate);
 const adminGuard = [requireAdmin];
 
+router.get('/retention', ...adminGuard, async (req, res) => {
+  try {
+    const config = await configService.getSystemConfig();
+    res.json({
+      success: true,
+      data: {
+        dataRetentionDays: config.dataRetentionDays,
+        cleanupEnabled: process.env.RETENTION_ENABLED !== 'false',
+      },
+    });
+  } catch (error) {
+    logger.error('Error getting retention configuration', { error: error.message });
+    res.status(500).json({ success: false, error: 'Failed to retrieve retention configuration' });
+  }
+});
+
+router.put('/retention', ...adminGuard, async (req, res) => {
+  const days = req.body?.dataRetentionDays;
+  if (!Number.isSafeInteger(days) || days < 1) {
+    return res.status(400).json({ success: false, error: 'Retention must be a positive whole number of days' });
+  }
+  if (Object.keys(req.body).some((key) => key !== 'dataRetentionDays')) {
+    return res.status(400).json({ success: false, error: 'Only dataRetentionDays can be updated here' });
+  }
+  try {
+    const config = await configService.updateRetentionDefault(days);
+    res.json({ success: true, data: config });
+  } catch (error) {
+    logger.error('Error updating retention configuration', { error: error.message });
+    res.status(500).json({ success: false, error: 'Failed to update retention configuration' });
+  }
+});
+
 router.use((req, res, next) => {
   if (req.method !== 'GET') {
     return res.status(405).json({

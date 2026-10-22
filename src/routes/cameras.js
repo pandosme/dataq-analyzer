@@ -153,6 +153,10 @@ router.post('/', ...editorGuard, async (req, res) => {
  */
 router.put('/:id', ...editorGuard, requireDeviceOwner, async (req, res) => {
   try {
+    if (req.body.retentionDays !== undefined && req.body.retentionDays !== null &&
+        (!Number.isSafeInteger(req.body.retentionDays) || req.body.retentionDays < 1)) {
+      return res.status(400).json({ success: false, error: 'Retention must be null or a positive whole number of days' });
+    }
     const allowedFields = [
       'name',
       'recordingName',

@@ -175,7 +175,8 @@ without touching your checkout.
 
 ## Configuration
 
-Two files, read once at startup. Changes need a restart.
+Two files, read once at startup. File changes need a restart. Administrator-managed
+retention overrides are stored in MongoDB and take effect without a restart.
 
 **`config.yaml`** — installation policy, no secrets. Application name, retention
 in days, page sizes, date format, which features are on (MQTT, playback), and
@@ -199,6 +200,38 @@ Validate before starting:
 ```bash
 npm run config:check
 ```
+
+### Data retention
+
+As an administrator, open **Administration → Data retention** in settings.
+Set the **Default retention (days)** and click **Save default**, or set an
+individual camera's retention and save that camera. Leave a camera's value
+blank to inherit the system default. Values must be positive whole days.
+Disabled and archived cameras are included because their history is also
+subject to cleanup.
+
+The saved default is shared by all updated application instances using the
+same database. Until an administrator saves a default, `app.dataRetentionDays`
+in `config.yaml` supplies it (90 days by default). Camera overrides take
+precedence. The explicit database default is stored as
+`SystemConfig.retentionDefaultDays`; legacy `dataRetentionDays` values in that
+document are not activated implicitly.
+
+Saving does not delete anything immediately. Cleanup first runs at the next
+server-local midnight and repeats every 24 hours, deleting paths whose event
+timestamp or creation date is older than the retention cutoff. Lowering retention
+can permanently delete history at the next cleanup; increasing it cannot restore
+deleted data. `RETENTION_ENABLED=false` disables cleanup on that process only.
+In particular, `npm run dev:dart` disables cleanup, but retention changes made
+there still affect updated production instances sharing the database.
+Older deployed versions must be upgraded to use the database-managed default.
+
+The authenticated API exposes `GET /api/config/retention` and admin-only
+`PUT /api/config/retention` with `{"dataRetentionDays": 30}`. Both endpoints
+require an administrator. Camera overrides use admin-only
+`PUT /api/cameras/:id` with `{"retentionDays": 14}` or
+`{"retentionDays": null}` to inherit. Other installation settings remain
+file-managed and read-only through the API.
 
 ### MediaMTX Playback
 

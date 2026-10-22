@@ -26,6 +26,11 @@ const systemConfigSchema = new mongoose.Schema(
       max: 10000,
     },
     // Data retention settings
+    retentionDefaultDays: {
+      type: Number,
+      min: 1,
+      validate: Number.isSafeInteger,
+    },
     dataRetentionDays: {
       type: Number,
       default: 90, // Keep path data for 90 days by default
